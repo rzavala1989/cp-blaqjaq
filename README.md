@@ -1,5 +1,7 @@
 # Blackjack in React, Clever Programmer style
 
+[Live App - cp-blaqjaq.vercel.app](cp-blaqjaq.vercel.app)
+
 Hello CP team!
 
 I made a couple of adjustments since concluding the presentation and demo of this app in PWR/PWJ. I'd like to highlight them here
