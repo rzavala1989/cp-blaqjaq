@@ -1,11 +1,9 @@
 {
   "name": "cp-blaqjaq",
+  "author": "Ricardo Zavala",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "dependencies": {
-    "@bem-react/classname": "^1.5.12",
-    "@bem-react/core": "^3.0.8",
-    "@bem-react/di": "^3.1.1",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
