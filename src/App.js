@@ -10,7 +10,15 @@ import getDeck from './utils/getDeck';
 import score from './utils/score';
 
 //import styled components
-import styled from 'styled-components';
+import {
+  GameBoard,
+  PlayerInfo,
+  PlayerScore,
+  DealerInfo,
+  DealerScore,
+  HitButton,
+  StandButton,
+} from './styled/styled-components';
 
 const GameStatuses = {
   DEAL: 'deal',
@@ -84,109 +92,6 @@ const handlers = {
   }),
   setGameStatus: (state) => (gameStatus) => ({ ...state, gameStatus }),
 };
-
-//Make our styled components
-const GameBoard = styled.div`
-  text-align: center;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.87), rgba(0, 0, 0, 0.15)),
-    url('/blackjack-bg.jpg');
-  background-size: cover;
-  color: white;
-  font-size: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  font-family: 'Limelight', cursive;
-  align-items: center;
-  height: 100vh;
-  width: 100vw;
-`;
-const PlayerInfo = styled.div`
-  position: absolute;
-  font-size: 2.5rem;
-  left: 0.7rem;
-  top: 0.3rem;
-  color: grey;
-`;
-const PlayerScore = styled.div`
-  font-size: 2.1rem;
-  color: grey;
-`;
-
-const DealerInfo = styled.div`
-  position: absolute;
-  font-size: 2.5rem;
-  right: 0.7rem;
-  top: 0.3rem;
-  color: white;
-`;
-const DealerScore = styled.div`
-  font-size: 2.1rem;
-  color: white;
-`;
-
-//Action Buttons
-const HitButton = styled.button`
-  height: 27%;
-  font-size: 3rem;
-  padding: 5.7rem;
-  background: linear-gradient(
-    to right,
-    rgba(212, 211, 210, 0.86),
-    rgba(96, 96, 96, 0.86),
-    rgba(96, 96, 96, 0.86),
-    rgba(56, 56, 56, 0.94),
-    rgba(36, 36, 36, 0.94),
-    rgba(29, 77, 65, 0.56),
-    rgba(29, 77, 65, 0.46),
-    rgba(29, 77, 65, 0.36)
-  );
-  color: white;
-  font-family: inherit;
-  width: 61%;
-  position: absolute;
-  bottom: 0rem;
-  left: 0rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: flex-start;
-
-  -webkit-clip-path: polygon(0 0%, 0 100%, 100% 100%);
-  clip-path: polygon(0 0%, 0 100%, 100% 100%);
-`;
-const StandButton = styled.button`
-  height: 27%;
-  font-size: 3rem;
-  padding: 5.7rem;
-  padding-right: 7.7rem !important;
-  background: linear-gradient(
-    to right,
-    rgba(29, 77, 65, 0.31),
-    rgba(29, 77, 65, 0.51),
-    rgba(29, 77, 65, 0.61),
-    rgba(29, 77, 65, 0.81),
-    rgba(212, 211, 210, 0.66),
-    rgba(212, 211, 210, 0.6),
-    rgba(212, 211, 210, 0.6),
-    rgba(212, 211, 210, 0.55),
-    rgba(44, 48, 112, 0.45),
-    rgb(220, 20, 60, 0.69)
-  );
-  color: rgb(29, 77, 65);
-  font-family: inherit;
-  width: 61%;
-  position: absolute;
-  bottom: 0rem;
-  right: 0rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: flex-end;
-  -webkit-text-stroke-width: 0.5px;
-  -webkit-text-stroke-color: rgb(180, 180, 180);
-
-  -webkit-clip-path: polygon(100% 0%, 0 100%, 100% 100%);
-  clip-path: polygon(100% 0%, 0 100%, 100% 100%);
-`;
 
 function App({ deck }) {
   // Step 2: bring in reducer and set our states

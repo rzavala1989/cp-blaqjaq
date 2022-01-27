@@ -1,20 +1,6 @@
 import React from 'react';
 import { Card } from './Card';
-import styled from 'styled-components';
-
-const Container = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin: 1rem 0;
-`;
-
-const Result = styled.h2`
-  position: absolute;
-  font-size: 3rem;
-  z-index: 2;
-`;
+import { Container, Result } from '../styled/styled-components';
 
 export const Hand = ({ cards = [], blackjack, win, lose, top }) => {
   return (
