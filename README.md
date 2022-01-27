@@ -1,6 +1,6 @@
 # Blackjack in React, Clever Programmer style
 
-[Live App - cp-blaqjaq.vercel.app](cp-blaqjaq.vercel.app)
+[Live App link here!](https://cp-blaqjaq.vercel.app/)
 
 Hello CP team!
 
