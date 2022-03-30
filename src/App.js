@@ -222,12 +222,25 @@ function App({ deck }) {
         win={gameStatus === GameStatuses.RESULTS && dealerHasEnoughCards}
         blackjack={gameStatus === GameStatuses.RESULTS && dealerHasBlackjack}
       />
+      <Hand
+        top={true}
+        cards={dealerHand}
+        win={gameStatus === GameStatuses.RESULTS && dealerHasEnoughCards}
+        blackjack={gameStatus === GameStatuses.RESULTS && dealerHasBlackjack}
+      />
       <Values
         dealerHasRevealed={dealerHasRevealed}
         playerValue={playerValue}
         dealerValue={dealerValue}
       />
       {/*Player Hand */}
+      <Hand
+        top={false}
+        cards={playerHand}
+        win={gameStatus === GameStatuses.RESULTS && dealerHasBust}
+        blackjack={gameStatus === GameStatuses.RESULTS && playerHasBlackjack}
+        lose={gameStatus === GameStatuses.RESULTS && playerHasBust}
+      />
       <Hand
         top={false}
         cards={playerHand}
