@@ -1,5 +1,3 @@
-import React from 'react';
-//import styled components
 import {
   ValuesContainer,
   DealerValue,

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSpring } from 'react-spring';
+import { useState, useEffect } from 'react';
+import { useSpring } from '@react-spring/web';
 //import styled components
 import { CardInHand, CardFront, CardBack, CardLabel } from '../styled/styled-components';
 
@@ -32,8 +32,8 @@ export const Card = ({ rank, suit, faceDown, top }) => {
             opacity: opacity.to((o) => 1 - o),
             transform,
           }}
-          blackSuit={blackSuit}
-          isTop={isTop}
+          $blackSuit={blackSuit}
+          $isTop={isTop}
         >
           <CardLabel>
             {rank} <br />

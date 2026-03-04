@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { animated } from 'react-spring';
+import { animated } from '@react-spring/web';
 
 // App.js - Game Board
 
@@ -118,7 +118,7 @@ export const CardInHand = styled.div`
   border-radius: 5px;
 `;
 export const CardFront = styled(animated.div)(
-  ({ blackSuit, isTop }) => `
+  ({ $blackSuit, $isTop }) => `
   border-radius: 5px;
   position: absolute;
   width: 100%;
@@ -126,11 +126,11 @@ export const CardFront = styled(animated.div)(
   box-shadow: 3px 4px 8px rgba(157,34,53, 0.629);
   background-color: white;
   background-image: ${
-    isTop
+    $isTop
       ? 'linear-gradient(rgba(0, 0, 0, 0.77),rgba(0, 0, 0, 0.25),rgba(0, 0, 0, 0))'
       : 'linear-gradient(white, white, white)'
   };
-  color: ${blackSuit ? 'black' : isTop ? 'rgb(169,0,0)' : 'crimson'};
+  color: ${$blackSuit ? 'black' : $isTop ? 'rgb(169,0,0)' : 'crimson'};
 `
 );
 
@@ -167,6 +167,60 @@ export const Result = styled.h2`
   position: absolute;
   font-size: 3rem;
   z-index: 2;
+  color: ${({ $color }) => $color || 'white'};
+`;
+
+// App.jsx - Chip Count
+export const ChipCount = styled.div`
+  position: absolute;
+  top: 3.5rem;
+  left: 0.7rem;
+  color: gold;
+  font-size: 1.2rem;
+`;
+
+// App.jsx - Action Row (bet chips, insurance, double/split/surrender)
+export const ActionRow = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: ${({ $compact }) => ($compact ? '0.5rem' : '1rem')};
+  z-index: 10;
+`;
+
+export const ActionButton = styled.button`
+  padding: ${({ $large }) => ($large ? '0.7rem 1.2rem' : '0.5rem 1rem')};
+  font-size: ${({ $large }) => ($large ? '1.2rem' : '1rem')};
+  font-family: inherit;
+  cursor: pointer;
+  background: ${({ $muted }) =>
+    $muted ? 'rgba(96, 96, 96, 0.8)' : 'rgba(29, 77, 65, 0.8)'};
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+export const NewRoundButton = styled.button`
+  padding: 0.7rem 1.5rem;
+  font-size: 1.2rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(29, 77, 65, 0.9);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  margin-top: 1rem;
+  z-index: 10;
+`;
+
+// Hand.jsx - Active hand highlight
+export const ActiveContainer = styled(Container)`
+  outline: 2px solid gold;
+  border-radius: 8px;
 `;
 
 // Values.jsx - Scoreboard
