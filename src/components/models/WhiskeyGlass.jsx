@@ -16,7 +16,7 @@ export function WhiskeyGlass() {
   }, [scene]);
 
   return (
-    <group position={[-1.5, 0.85, 0.8]} scale={[0.04, 0.04, 0.04]} rotation={[0, Math.PI / 5, 0]}>
+    <group position={[-0.5, 0.06, -1.1]} scale={[0.008, 0.008, 0.008]} rotation={[0, Math.PI / 5, 0]}>
       <primitive object={scene} />
     </group>
   );
