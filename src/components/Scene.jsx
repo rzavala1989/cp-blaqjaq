@@ -81,7 +81,7 @@ export default function Scene() {
         <BlackjackTable />
         <WhiskeyGlass />
         <Colt1911 />
-        <CardDeck />
+
       </Suspense>
 
       <ContactShadows position={[0, 0, 0]} opacity={0.6} blur={2} />

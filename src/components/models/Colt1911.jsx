@@ -16,7 +16,7 @@ export function Colt1911() {
   }, [scene]);
 
   return (
-    <group position={[1.5, 0.85, -0.8]} scale={[0.5, 0.5, 0.5]} rotation={[0, -Math.PI / 6, 0]}>
+    <group position={[-0.5, 0.07, -0.2]} scale={[1.2, 0.8, 0.8]} rotation={[0, -Math.PI / -3, 1.5]}>
       <primitive object={scene} />
     </group>
   );
