@@ -5,12 +5,7 @@ import { animated } from '@react-spring/web';
 
 export const GameBoard = styled.div`
   text-align: center;
-  background: radial-gradient(
-    ellipse at 50% 50%,
-    rgba(18, 71, 52, 0.95) 0%,
-    rgba(8, 41, 28, 1) 70%,
-    rgba(2, 15, 10, 1) 100%
-  );
+  background: #1a4a32;
   color: white;
   font-size: 1rem;
   display: flex;
@@ -27,17 +22,8 @@ export const GameBoard = styled.div`
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
     background-size: 256px 256px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
     pointer-events: none;
     z-index: 0;
   }
@@ -156,7 +142,7 @@ export const StandButton = styled.button`
     rgba(44, 48, 112, 0.45),
     rgb(220, 20, 60, 0.69)
   );
-  color: rgb(29, 77, 65);
+  color: white;
   font-family: 'Playfair Display', serif;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -169,8 +155,6 @@ export const StandButton = styled.button`
   display: flex;
   justify-content: flex-end;
   border: none;
-  -webkit-text-stroke-width: 0.5px;
-  -webkit-text-stroke-color: rgb(180, 180, 180);
   transition: all 0.25s ease;
 
   -webkit-clip-path: polygon(100% 0%, 0 100%, 100% 100%);
@@ -212,19 +196,14 @@ export const CardInHand = styled.div`
 `;
 
 export const CardFront = styled(animated.div)(
-  ({ $blackSuit, $isTop }) => `
+  ({ $blackSuit }) => `
   border-radius: 5px;
   position: absolute;
   width: 100%;
   height: 100%;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
   background-color: white;
-  background-image: ${
-    $isTop
-      ? 'linear-gradient(rgba(0, 0, 0, 0.77),rgba(0, 0, 0, 0.25),rgba(0, 0, 0, 0))'
-      : 'linear-gradient(white, white, white)'
-  };
-  color: ${$blackSuit ? 'black' : $isTop ? 'rgb(169,0,0)' : 'crimson'};
+  color: ${$blackSuit ? 'black' : 'crimson'};
 `
 );
 

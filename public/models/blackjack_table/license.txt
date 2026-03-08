@@ -1,0 +1,11 @@
+Model Information:
+* title:	Blackjack Table
+* source:	https://sketchfab.com/3d-models/blackjack-table-b2b0974f06ee4623b882c76378a59483
+* author:	nermin (https://sketchfab.com/nermin)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Blackjack Table" (https://sketchfab.com/3d-models/blackjack-table-b2b0974f06ee4623b882c76378a59483) by nermin (https://sketchfab.com/nermin) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

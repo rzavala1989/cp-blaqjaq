@@ -1,0 +1,11 @@
+Model Information:
+* title:	Colt M1911
+* source:	https://sketchfab.com/3d-models/colt-m1911-6b20f04b583a4c4a9d009c0412f01678
+* author:	b0ho (https://sketchfab.com/b0ho)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Colt M1911" (https://sketchfab.com/3d-models/colt-m1911-6b20f04b583a4c4a9d009c0412f01678) by b0ho (https://sketchfab.com/b0ho) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

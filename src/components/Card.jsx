@@ -28,7 +28,6 @@ export const Card = ({ rank, suit, faceDown, top }) => {
       />
       <CardFront
         $blackSuit={blackSuit}
-        $isTop={top}
         style={{
           transform: rotateY.to((r) => `perspective(600px) rotateY(${r + 180}deg)`),
           backfaceVisibility: 'hidden',
