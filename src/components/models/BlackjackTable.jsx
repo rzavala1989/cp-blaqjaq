@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 
-const MODEL_PATH = '/models/blackjack_table/scene.gltf';
+const MODEL_PATH = '/models/blackjack_table/scene.glb';
 
 export function BlackjackTable() {
   const { scene } = useGLTF(MODEL_PATH);
