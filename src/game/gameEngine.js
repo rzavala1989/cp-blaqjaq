@@ -25,6 +25,8 @@ export function createInitialState(config = {}) {
     insuranceBet: 0,
     insuranceOffered: false,
     insuranceDecided: false,
+    evenMoneyOffered: false,
+    evenMoneyDecided: false,
     chips: mergedConfig.startingChips,
     stats: { wins: 0, losses: 0, pushes: 0, blackjacks: 0 },
   };
@@ -139,6 +141,14 @@ function handleDeal(state) {
   };
 
   // Check for naturals
+  if (playerEval.isBlackjack && dealerCard1.rank === 'A') {
+    // Player has blackjack, dealer shows Ace: offer even money
+    newState.evenMoneyOffered = true;
+    newState.evenMoneyDecided = false;
+    newState.phase = Phase.PLAYER_TURN;
+    return newState;
+  }
+
   if (playerEval.isBlackjack && dealerEval.isBlackjack) {
     // Both have blackjack: push
     newState.hands = [{ ...hands[0], result: Result.PUSH }];
@@ -150,7 +160,7 @@ function handleDeal(state) {
   }
 
   if (playerEval.isBlackjack) {
-    // Player blackjack, dealer does not
+    // Player blackjack, dealer does not show Ace
     const payout = hands[0].bet + hands[0].bet * state.config.blackjackPayout;
     newState.hands = [{ ...hands[0], result: Result.PLAYER_BLACKJACK }];
     newState.dealerHand = revealDealerHand(dealerCards);
@@ -283,20 +293,8 @@ function handleSplit(state) {
   }
 
   const hand = state.hands[state.activeHandIndex];
-  if (hand.cards.length !== 2) {
-    throw new Error('Can only split with two cards');
-  }
-
-  const rank1 = hand.cards[0].rank;
-  const rank2 = hand.cards[1].rank;
-  const val1 = ['10', 'J', 'Q', 'K'].includes(rank1) ? '10' : rank1;
-  const val2 = ['10', 'J', 'Q', 'K'].includes(rank2) ? '10' : rank2;
-  if (val1 !== val2) {
-    throw new Error('Cards must have the same value to split');
-  }
-
-  if (state.chips < hand.bet) {
-    throw new Error('Insufficient chips to split');
+  if (!canSplit(hand, state.chips, state.hands.length, state.config.maxSplitHands)) {
+    throw new Error('Cannot split this hand');
   }
 
   let shoe = state.shoe;
@@ -304,7 +302,7 @@ function handleSplit(state) {
   [card1, shoe] = draw(shoe);
   [card2, shoe] = draw(shoe);
 
-  const isAces = rank1 === 'A';
+  const isAces = hand.cards[0].rank === 'A';
 
   const hand1 = {
     ...createEmptyHand(),
@@ -432,6 +430,64 @@ function handleDeclineInsurance(state) {
   }
 
   return { ...newState, phase: Phase.PLAYER_TURN };
+}
+
+function handleEvenMoney(state) {
+  if (!state.evenMoneyOffered || state.evenMoneyDecided) {
+    throw new Error('Even money not available');
+  }
+
+  // Pay 1:1 immediately (guaranteed win, no risk of push)
+  const bet = state.hands[0].bet;
+  return {
+    ...state,
+    evenMoneyDecided: true,
+    hands: [{ ...state.hands[0], result: Result.PLAYER_BLACKJACK }],
+    dealerHand: revealDealerHand(state.dealerHand),
+    chips: state.chips + bet * 2,
+    stats: {
+      ...state.stats,
+      blackjacks: state.stats.blackjacks + 1,
+      wins: state.stats.wins + 1,
+    },
+    phase: Phase.SETTLED,
+  };
+}
+
+function handleDeclineEvenMoney(state) {
+  if (!state.evenMoneyOffered || state.evenMoneyDecided) {
+    throw new Error('Even money not available');
+  }
+
+  const dealerEval = evaluateHandFull(state.dealerHand);
+
+  let newState = {
+    ...state,
+    evenMoneyDecided: true,
+  };
+
+  if (dealerEval.isBlackjack) {
+    // Both have blackjack: push
+    newState.hands = [{ ...state.hands[0], result: Result.PUSH }];
+    newState.dealerHand = revealDealerHand(state.dealerHand);
+    newState.chips = newState.chips + state.hands[0].bet;
+    newState.stats = { ...newState.stats, pushes: newState.stats.pushes + 1 };
+    newState.phase = Phase.SETTLED;
+    return newState;
+  }
+
+  // Dealer doesn't have blackjack: player gets full 3:2
+  const payout = state.hands[0].bet + state.hands[0].bet * state.config.blackjackPayout;
+  newState.hands = [{ ...state.hands[0], result: Result.PLAYER_BLACKJACK }];
+  newState.dealerHand = revealDealerHand(state.dealerHand);
+  newState.chips = newState.chips + payout;
+  newState.stats = {
+    ...newState.stats,
+    blackjacks: newState.stats.blackjacks + 1,
+    wins: newState.stats.wins + 1,
+  };
+  newState.phase = Phase.SETTLED;
+  return newState;
 }
 
 function handleSurrender(state) {
@@ -564,6 +620,22 @@ function handleNewRound(state) {
     insuranceBet: 0,
     insuranceOffered: false,
     insuranceDecided: false,
+    evenMoneyOffered: false,
+    evenMoneyDecided: false,
+  };
+}
+
+function handleRebuy(state) {
+  if (state.phase !== Phase.SETTLED) {
+    throw new Error(`Cannot rebuy during ${state.phase}`);
+  }
+  if (state.chips >= state.config.minimumBet) {
+    throw new Error('Cannot rebuy when you still have chips to play');
+  }
+
+  return {
+    ...state,
+    chips: state.config.startingChips,
   };
 }
 
@@ -587,6 +659,10 @@ export function gameReducer(state, action) {
       return handleInsurance(state);
     case Action.DECLINE_INSURANCE:
       return handleDeclineInsurance(state);
+    case Action.EVEN_MONEY:
+      return handleEvenMoney(state);
+    case Action.DECLINE_EVEN_MONEY:
+      return handleDeclineEvenMoney(state);
     case Action.SURRENDER:
       return handleSurrender(state);
     case Action.DEALER_HIT:
@@ -595,6 +671,8 @@ export function gameReducer(state, action) {
       return handleSettle(state);
     case Action.NEW_ROUND:
       return handleNewRound(state);
+    case Action.REBUY:
+      return handleRebuy(state);
     default:
       throw new Error(`Unknown action: ${action.type}`);
   }
@@ -602,9 +680,9 @@ export function gameReducer(state, action) {
 
 // --- Exported helpers for UI ---
 
-export function canSplit(hand, chips) {
+export function canSplit(hand, chips, totalHands = 1, maxSplitHands = 4) {
   if (hand.cards.length !== 2) return false;
-  if (hand.fromSplit) return false;
+  if (totalHands >= maxSplitHands) return false;
   const rank1 = hand.cards[0].rank;
   const rank2 = hand.cards[1].rank;
   const val1 = ['10', 'J', 'Q', 'K'].includes(rank1) ? '10' : rank1;
@@ -618,4 +696,8 @@ export function canDoubleDown(hand, chips) {
 
 export function canSurrender(hand) {
   return hand.cards.length === 2 && !hand.fromSplit;
+}
+
+export function isBankrupt(chips, minimumBet) {
+  return chips < minimumBet;
 }

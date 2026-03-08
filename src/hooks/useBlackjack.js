@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect, useMemo } from 'react';
-import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender } from '../game/gameEngine.js';
+import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine.js';
 import { Phase, Action } from '../game/constants.js';
 import { evaluateHand, evaluateHandFull } from '../game/scoring.js';
 
@@ -80,6 +80,14 @@ export function useBlackjack(config = {}) {
     dispatch({ type: Action.DECLINE_INSURANCE });
   }, []);
 
+  const evenMoney = useCallback(() => {
+    dispatch({ type: Action.EVEN_MONEY });
+  }, []);
+
+  const declineEvenMoney = useCallback(() => {
+    dispatch({ type: Action.DECLINE_EVEN_MONEY });
+  }, []);
+
   const surrender = useCallback(() => {
     dispatch({ type: Action.SURRENDER });
   }, []);
@@ -88,10 +96,16 @@ export function useBlackjack(config = {}) {
     dispatch({ type: Action.NEW_ROUND });
   }, []);
 
+  const rebuy = useCallback(() => {
+    dispatch({ type: Action.REBUY });
+  }, []);
+
   // UI flags
   const isPlayerTurn = state.phase === Phase.PLAYER_TURN;
   const handActive = isPlayerTurn && activeHand && activeHand.result === null;
   const showInsurance = state.insuranceOffered && !state.insuranceDecided;
+  const showEvenMoney = state.evenMoneyOffered && !state.evenMoneyDecided;
+  const bankrupt = state.phase === Phase.BETTING && isBankrupt(state.chips, state.config.minimumBet);
 
   return {
     // State
@@ -110,15 +124,20 @@ export function useBlackjack(config = {}) {
     split,
     insurance,
     declineInsurance,
+    evenMoney,
+    declineEvenMoney,
     surrender,
     newRound,
+    rebuy,
 
     // UI flags
-    canHit: handActive && !showInsurance,
-    canStand: handActive && !showInsurance,
-    canDouble: handActive && !showInsurance && activeHand && canDoubleDown(activeHand, state.chips),
-    canSplitHand: handActive && !showInsurance && activeHand && canSplit(activeHand, state.chips),
-    canSurrenderHand: handActive && !showInsurance && activeHand && canSurrender(activeHand),
+    canHit: handActive && !showInsurance && !showEvenMoney,
+    canStand: handActive && !showInsurance && !showEvenMoney,
+    canDouble: handActive && !showInsurance && !showEvenMoney && activeHand && canDoubleDown(activeHand, state.chips),
+    canSplitHand: handActive && !showInsurance && !showEvenMoney && activeHand && canSplit(activeHand, state.chips, state.hands.length, state.config.maxSplitHands),
+    canSurrenderHand: handActive && !showInsurance && !showEvenMoney && activeHand && canSurrender(activeHand),
     showInsurance,
+    showEvenMoney,
+    bankrupt,
   };
 }

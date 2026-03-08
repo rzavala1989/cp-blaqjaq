@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, gameReducer, canSplit, canDoubleDown, canSurrender } from './gameEngine.js';
+import { createInitialState, gameReducer, canSplit, canDoubleDown, canSurrender, isBankrupt } from './gameEngine.js';
 import { Phase, Result, Action } from './constants.js';
 
 // Helper: create a state with a known shoe for deterministic tests
@@ -370,7 +370,7 @@ describe('SPLIT', () => {
     const shoe = [card('8'), card('5'), card('7'), card('3')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
-    expect(() => gameReducer(dealt, { type: Action.SPLIT })).toThrow('same value');
+    expect(() => gameReducer(dealt, { type: Action.SPLIT })).toThrow('Cannot split');
   });
 
   it('allows splitting 10-value cards of different ranks', () => {
@@ -492,27 +492,32 @@ describe('NEW_ROUND', () => {
 describe('canSplit', () => {
   it('returns true for matching ranks', () => {
     const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: false };
-    expect(canSplit(hand, 100)).toBe(true);
+    expect(canSplit(hand, 100, 1, 4)).toBe(true);
   });
 
   it('returns false for non-matching ranks', () => {
     const hand = { cards: [card('8'), card('7')], bet: 100, fromSplit: false };
-    expect(canSplit(hand, 100)).toBe(false);
+    expect(canSplit(hand, 100, 1, 4)).toBe(false);
   });
 
   it('returns true for different 10-value cards', () => {
     const hand = { cards: [card('K'), card('Q')], bet: 100, fromSplit: false };
-    expect(canSplit(hand, 100)).toBe(true);
+    expect(canSplit(hand, 100, 1, 4)).toBe(true);
   });
 
-  it('returns false if already from split', () => {
+  it('allows re-splitting when under max hands', () => {
     const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: true };
-    expect(canSplit(hand, 100)).toBe(false);
+    expect(canSplit(hand, 100, 2, 4)).toBe(true);
+  });
+
+  it('returns false when at max split hands', () => {
+    const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: true };
+    expect(canSplit(hand, 100, 4, 4)).toBe(false);
   });
 
   it('returns false with insufficient chips', () => {
     const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: false };
-    expect(canSplit(hand, 50)).toBe(false);
+    expect(canSplit(hand, 50, 1, 4)).toBe(false);
   });
 });
 
@@ -537,5 +542,148 @@ describe('canSurrender', () => {
   it('returns false from split', () => {
     const hand = { cards: [card('5'), card('6')], fromSplit: true };
     expect(canSurrender(hand)).toBe(false);
+  });
+});
+
+describe('Re-splitting', () => {
+  it('allows splitting a hand that came from a split', () => {
+    // P1=8H, D1=5, P2=8S, D2=3, split cards: 8C, 7 (first hand gets another 8)
+    // Then re-split the first hand: new cards 6, 9
+    const shoe = [
+      card('8'), card('5'), card('8', 'S'), card('3'),
+      card('8', 'C'), card('7'),
+      card('6'), card('9'),
+    ];
+    const state = stateWithShoe(shoe, { chips: 1000 });
+    const dealt = betAndDeal(state);
+
+    // First split: 8H and 8S
+    const split1 = gameReducer(dealt, { type: Action.SPLIT });
+    expect(split1.hands).toHaveLength(2);
+    // Hand 0: [8H, 8C] (another pair!)
+    expect(split1.hands[0].cards[0].rank).toBe('8');
+    expect(split1.hands[0].cards[1].rank).toBe('8');
+
+    // Re-split hand 0
+    const split2 = gameReducer(split1, { type: Action.SPLIT });
+    expect(split2.hands).toHaveLength(3);
+    expect(split2.chips).toBe(1000 - 100 - 100 - 100); // 3 bets
+  });
+
+  it('blocks splitting when at max hands', () => {
+    // Set maxSplitHands to 2 so only one split is allowed
+    const shoe = [
+      card('8'), card('5'), card('8', 'S'), card('3'),
+      card('8', 'C'), card('7'),
+      card('6'), card('9'),
+    ];
+    const state = stateWithShoe(shoe, { chips: 1000 });
+    state.config.maxSplitHands = 2;
+    const dealt = betAndDeal(state);
+
+    const split1 = gameReducer(dealt, { type: Action.SPLIT });
+    expect(split1.hands).toHaveLength(2);
+
+    // Try re-split, should fail because we're at max
+    expect(() => gameReducer(split1, { type: Action.SPLIT })).toThrow('Cannot split');
+  });
+});
+
+describe('EVEN_MONEY', () => {
+  it('offers even money when player has blackjack and dealer shows Ace', () => {
+    // Player: A, K (blackjack), Dealer: A, 3
+    const shoe = [card('A'), card('A', 'S'), card('K'), card('3')];
+    const state = stateWithShoe(shoe);
+    const dealt = betAndDeal(state);
+
+    expect(dealt.evenMoneyOffered).toBe(true);
+    expect(dealt.evenMoneyDecided).toBe(false);
+    expect(dealt.phase).toBe('player-turn');
+  });
+
+  it('pays 1:1 immediately when even money accepted', () => {
+    const shoe = [card('A'), card('A', 'S'), card('K'), card('3')];
+    const state = stateWithShoe(shoe);
+    const dealt = betAndDeal(state);
+    const even = gameReducer(dealt, { type: Action.EVEN_MONEY });
+
+    expect(even.phase).toBe('settled');
+    expect(even.hands[0].result).toBe(Result.PLAYER_BLACKJACK);
+    // Even money: bet 100 returned + 100 win = 1000 - 100 + 200 = 1100
+    expect(even.chips).toBe(1100);
+  });
+
+  it('pays 3:2 when even money declined and dealer has no blackjack', () => {
+    // Player: A, K, Dealer: A, 3 (no BJ)
+    const shoe = [card('A'), card('A', 'S'), card('K'), card('3')];
+    const state = stateWithShoe(shoe);
+    const dealt = betAndDeal(state);
+    const declined = gameReducer(dealt, { type: Action.DECLINE_EVEN_MONEY });
+
+    expect(declined.phase).toBe('settled');
+    expect(declined.hands[0].result).toBe(Result.PLAYER_BLACKJACK);
+    // 3:2 payout: 100 + 150 = 250 returned, so 900 + 250 = 1150
+    expect(declined.chips).toBe(1150);
+  });
+
+  it('pushes when even money declined and dealer also has blackjack', () => {
+    // Player: A, K, Dealer: A, K (both BJ)
+    const shoe = [card('A'), card('A', 'S'), card('K'), card('K', 'S')];
+    const state = stateWithShoe(shoe);
+    const dealt = betAndDeal(state);
+    const declined = gameReducer(dealt, { type: Action.DECLINE_EVEN_MONEY });
+
+    expect(declined.phase).toBe('settled');
+    expect(declined.hands[0].result).toBe(Result.PUSH);
+    expect(declined.chips).toBe(1000); // bet returned
+  });
+});
+
+describe('REBUY', () => {
+  it('resets chips to starting amount when bankrupt', () => {
+    const state = {
+      ...createInitialState(),
+      phase: Phase.SETTLED,
+      chips: 0,
+      hands: [{
+        cards: [card('K'), card('7')],
+        bet: 100, result: Result.DEALER_WIN, isDoubled: false, isSurrendered: false, fromSplit: false,
+      }],
+      dealerHand: [card('K'), card('9')],
+    };
+
+    const rebuyed = gameReducer(state, { type: Action.REBUY });
+    expect(rebuyed.chips).toBe(1000);
+  });
+
+  it('rejects rebuy when player still has chips to play', () => {
+    const state = {
+      ...createInitialState(),
+      phase: Phase.SETTLED,
+      chips: 100,
+      hands: [{
+        cards: [card('K'), card('7')],
+        bet: 100, result: Result.DEALER_WIN, isDoubled: false, isSurrendered: false, fromSplit: false,
+      }],
+      dealerHand: [card('K'), card('9')],
+    };
+
+    expect(() => gameReducer(state, { type: Action.REBUY })).toThrow('still have chips');
+  });
+
+  it('rejects rebuy outside SETTLED phase', () => {
+    const state = createInitialState();
+    expect(() => gameReducer(state, { type: Action.REBUY })).toThrow();
+  });
+});
+
+describe('isBankrupt', () => {
+  it('returns true when chips below minimum bet', () => {
+    expect(isBankrupt(5, 10)).toBe(true);
+  });
+
+  it('returns false when chips at or above minimum bet', () => {
+    expect(isBankrupt(10, 10)).toBe(false);
+    expect(isBankrupt(100, 10)).toBe(false);
   });
 });

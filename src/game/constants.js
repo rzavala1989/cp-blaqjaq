@@ -26,10 +26,13 @@ export const Action = {
   SPLIT: 'split',
   INSURANCE: 'insurance',
   DECLINE_INSURANCE: 'decline-insurance',
+  EVEN_MONEY: 'even-money',
+  DECLINE_EVEN_MONEY: 'decline-even-money',
   SURRENDER: 'surrender',
   DEALER_HIT: 'dealer-hit',
   SETTLE: 'settle',
   NEW_ROUND: 'new-round',
+  REBUY: 'rebuy',
 };
 
 export const DEFAULT_CONFIG = {
@@ -41,4 +44,5 @@ export const DEFAULT_CONFIG = {
   startingChips: 1000,
   minimumBet: 10,
   maximumBet: 500,
+  maxSplitHands: 4,
 };

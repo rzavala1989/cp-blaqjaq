@@ -1,11 +1,13 @@
+import { useTrail, useTransition, animated, to } from '@react-spring/web';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { Card } from './Card';
-import { Container, ActiveContainer, Result as ResultOverlay } from '../styled/styled-components';
+import { Container, ActiveContainer, AnimatedResultOverlay } from '../styled/styled-components';
 import { Result } from '../game/constants';
 
 const RESULT_DISPLAY = {
-  [Result.PLAYER_BLACKJACK]: { text: 'BLACKJACK', color: 'navy' },
-  [Result.PLAYER_WIN]: { text: 'WIN', color: 'green' },
-  [Result.DEALER_BUST]: { text: 'WIN', color: 'green' },
+  [Result.PLAYER_BLACKJACK]: { text: 'BLACKJACK', color: 'gold' },
+  [Result.PLAYER_WIN]: { text: 'WIN', color: '#4caf50' },
+  [Result.DEALER_BUST]: { text: 'WIN', color: '#4caf50' },
   [Result.DEALER_WIN]: { text: 'LOSE', color: 'rgb(169,0,0)' },
   [Result.PLAYER_BUST]: { text: 'BUST', color: 'rgb(169,0,0)' },
   [Result.PUSH]: { text: 'PUSH', color: 'gold' },
@@ -13,20 +15,61 @@ const RESULT_DISPLAY = {
 };
 
 export const Hand = ({ cards = [], result, top, isActive }) => {
+  const prefersReduced = useReducedMotion();
   const display = result ? RESULT_DISPLAY[result] : null;
   const Wrapper = isActive ? ActiveContainer : Container;
 
+  // Staggered card dealing: slide in from off-screen
+  const trail = useTrail(cards.length, {
+    from: { x: 300, y: top ? -200 : 200, opacity: 0, scale: 0.7 },
+    to: { x: 0, y: 0, opacity: 1, scale: 1 },
+    config: { mass: 1.2, tension: 200, friction: 26 },
+    immediate: prefersReduced,
+  });
+
+  // Result overlay slam: scale from 2.5 down to 1
+  const resultTransition = useTransition(display, {
+    from: { opacity: 0, scale: 2.5, blur: 10 },
+    enter: { opacity: 1, scale: 1, blur: 0 },
+    leave: { opacity: 0, scale: 0.8, blur: 5 },
+    config: { tension: 300, friction: 20 },
+    immediate: prefersReduced,
+  });
+
   return (
     <Wrapper>
-      {display && <ResultOverlay $color={display.color}>{display.text}</ResultOverlay>}
-      {cards.map((card, index) => (
-        <Card
-          top={top}
+      {resultTransition((style, item) =>
+        item ? (
+          <AnimatedResultOverlay
+            $color={item.color}
+            style={{
+              opacity: style.opacity,
+              transform: style.scale.to((s) => `scale(${s})`),
+              filter: style.blur.to((b) => `blur(${b}px)`),
+            }}
+          >
+            {item.text}
+          </AnimatedResultOverlay>
+        ) : null
+      )}
+      {trail.map((spring, index) => (
+        <animated.div
           key={index}
-          rank={card.rank}
-          suit={card.suit}
-          faceDown={card.faceDown}
-        />
+          style={{
+            transform: to(
+              [spring.x, spring.y, spring.scale],
+              (x, y, s) => `translate3d(${x}px, ${y}px, 0) scale(${s})`
+            ),
+            opacity: spring.opacity,
+          }}
+        >
+          <Card
+            top={top}
+            rank={cards[index].rank}
+            suit={cards[index].suit}
+            faceDown={cards[index].faceDown}
+          />
+        </animated.div>
       ))}
     </Wrapper>
   );
