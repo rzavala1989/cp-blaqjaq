@@ -1,6 +1,6 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, AccumulativeShadows, RandomizedLight } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -10,6 +10,10 @@ import { BlackjackTable } from './models/BlackjackTable';
 import { WhiskeyGlass } from './models/WhiskeyGlass';
 import { Colt1911 } from './models/Colt1911';
 import { Floor } from './Floor';
+import { CasinoBackdrop } from './CasinoBackdrop';
+import { CardDeck } from './models/CardDeck';
+import { FedoraHat } from './models/FedoraHat';
+import { ChipTray } from './models/ChipTray';
 
 interface CameraIntroProps {
   onComplete: () => void;
@@ -86,11 +90,33 @@ export default function Scene() {
         <BlackjackTable />
         <WhiskeyGlass />
         <Colt1911 />
+        <FedoraHat />
+        <CardDeck />
+        <ChipTray />
         <Floor />
+        <CasinoBackdrop />
+        <AccumulativeShadows
+          position={[0, 0.01, 0]}
+          frames={60}
+          opacity={0.8}
+          scale={6}
+          color="#1a0d00"
+        >
+          <RandomizedLight
+            amount={4}
+            radius={2}
+            intensity={1}
+            position={[0, 8, 0]}
+            bias={0.001}
+          />
+        </AccumulativeShadows>
       </Suspense>
 
-      <ContactShadows position={[0, 0, 0]} opacity={0.6} blur={2} />
-      <Environment preset="night" />
+      <Environment
+        preset="apartment"
+        background={false}
+        environmentIntensity={0.3}
+      />
 
       <EffectComposer>
         <Bloom luminanceThreshold={0.85} intensity={0.4} radius={0.5} />

@@ -1,0 +1,11 @@
+Model Information:
+* title:	52-Card Deck
+* source:	https://sketchfab.com/3d-models/52-card-deck-dc2e1196295e45649d4471791ed23f5b
+* author:	Anthony Yanez (https://sketchfab.com/paulyanez)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "52-Card Deck" (https://sketchfab.com/3d-models/52-card-deck-dc2e1196295e45649d4471791ed23f5b) by Anthony Yanez (https://sketchfab.com/paulyanez) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

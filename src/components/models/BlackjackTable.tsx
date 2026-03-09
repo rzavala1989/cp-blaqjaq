@@ -9,6 +9,7 @@ export function BlackjackTable() {
 
   useEffect(() => {
     scene.traverse((child) => {
+      if (child.name === 'Chips') child.visible = false;
       if (child instanceof THREE.Mesh) {
         child.castShadow = true;
         child.receiveShadow = true;
