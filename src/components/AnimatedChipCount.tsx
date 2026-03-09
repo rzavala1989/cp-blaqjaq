@@ -5,7 +5,11 @@ import { ChipCount } from '../styled/styled-components';
 
 const AnimatedChipCountInner = animated(ChipCount);
 
-export function AnimatedChipCount({ value }) {
+interface AnimatedChipCountProps {
+  value: number;
+}
+
+export function AnimatedChipCount({ value }: AnimatedChipCountProps) {
   const prefersReduced = useReducedMotion();
   const prevValue = useRef(value);
 

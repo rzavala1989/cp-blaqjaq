@@ -195,7 +195,7 @@ export const CardInHand = styled.div`
   transform-style: preserve-3d;
 `;
 
-export const CardFront = styled(animated.div)(
+export const CardFront = styled(animated.div)<{ $blackSuit: boolean }>(
   ({ $blackSuit }) => `
   border-radius: 5px;
   position: absolute;
@@ -244,8 +244,7 @@ export const ActiveContainer = styled(Container)`
   border-radius: 8px;
 `;
 
-// Result overlay (non-animated fallback, used if needed)
-export const Result = styled.h2`
+export const ResultOverlay = styled.h2<{ $color?: string }>`
   position: absolute;
   font-size: 3rem;
   z-index: 2;
@@ -258,8 +257,7 @@ export const Result = styled.h2`
   pointer-events: none;
 `;
 
-// Animated result overlay for slam effect
-export const AnimatedResultOverlay = styled(animated.h2)`
+export const AnimatedResultOverlay = styled(animated.h2)<{ $color?: string }>`
   position: absolute;
   font-size: 3rem;
   z-index: 2;
@@ -287,14 +285,14 @@ export const ChipCount = styled.div`
 
 // === Action Buttons ===
 
-export const ActionRow = styled.div`
+export const ActionRow = styled.div<{ $compact?: boolean }>`
   display: flex;
   gap: 0.5rem;
   margin-top: ${({ $compact }) => ($compact ? '0.5rem' : '1rem')};
   z-index: 10;
 `;
 
-export const ActionButton = styled.button`
+export const ActionButton = styled.button<{ $large?: boolean; $muted?: boolean }>`
   padding: ${({ $large }) => ($large ? '0.7rem 1.2rem' : '0.5rem 1rem')};
   font-size: ${({ $large }) => ($large ? '1.2rem' : '1rem')};
   font-family: 'DM Sans', sans-serif;

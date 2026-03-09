@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateHand, evaluateHandFull } from './scoring.js';
+import { evaluateHand, evaluateHandFull } from './scoring';
 
 describe('evaluateHandFull', () => {
   it('scores an empty hand as 0', () => {

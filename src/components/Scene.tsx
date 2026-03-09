@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
@@ -9,9 +9,13 @@ import { Lighting } from './Lighting';
 import { BlackjackTable } from './models/BlackjackTable';
 import { WhiskeyGlass } from './models/WhiskeyGlass';
 import { Colt1911 } from './models/Colt1911';
-import { CardDeck } from './CardDeck';
+import { Floor } from './Floor';
 
-function CameraIntro({ onComplete }) {
+interface CameraIntroProps {
+  onComplete: () => void;
+}
+
+function CameraIntro({ onComplete }: CameraIntroProps) {
   const { camera } = useThree();
 
   useEffect(() => {
@@ -42,6 +46,7 @@ function CameraIntro({ onComplete }) {
 
 export default function Scene() {
   const [controlsReady, setControlsReady] = useState(false);
+  const handleIntroComplete = useCallback(() => setControlsReady(true), []);
 
   return (
     <Canvas
@@ -63,7 +68,7 @@ export default function Scene() {
       <color attach="background" args={['#000000']} />
       <fogExp2 attach="fog" args={['#000000', 0.04]} />
 
-      <CameraIntro onComplete={() => setControlsReady(true)} />
+      <CameraIntro onComplete={handleIntroComplete} />
 
       <OrbitControls
         enableDamping
@@ -81,7 +86,7 @@ export default function Scene() {
         <BlackjackTable />
         <WhiskeyGlass />
         <Colt1911 />
-
+        <Floor />
       </Suspense>
 
       <ContactShadows position={[0, 0, 0]} opacity={0.6} blur={2} />

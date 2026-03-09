@@ -5,7 +5,9 @@ export const Phase = {
   DEALER_TURN: 'dealer-turn',
   RESOLVING: 'resolving',
   SETTLED: 'settled',
-};
+} as const;
+
+export type PhaseValue = (typeof Phase)[keyof typeof Phase];
 
 export const Result = {
   PLAYER_BLACKJACK: 'player-blackjack',
@@ -15,7 +17,9 @@ export const Result = {
   PLAYER_BUST: 'player-bust',
   DEALER_BUST: 'dealer-bust',
   SURRENDER: 'surrender',
-};
+} as const;
+
+export type ResultValue = (typeof Result)[keyof typeof Result];
 
 export const Action = {
   PLACE_BET: 'place-bet',
@@ -33,9 +37,23 @@ export const Action = {
   SETTLE: 'settle',
   NEW_ROUND: 'new-round',
   REBUY: 'rebuy',
-};
+} as const;
 
-export const DEFAULT_CONFIG = {
+export type ActionValue = (typeof Action)[keyof typeof Action];
+
+export interface GameConfig {
+  deckCount: number;
+  reshuffleThreshold: number;
+  dealerHitsSoft17: boolean;
+  blackjackPayout: number;
+  insurancePayout: number;
+  startingChips: number;
+  minimumBet: number;
+  maximumBet: number;
+  maxSplitHands: number;
+}
+
+export const DEFAULT_CONFIG: GameConfig = {
   deckCount: 6,
   reshuffleThreshold: 0.75,
   dealerHitsSoft17: true,

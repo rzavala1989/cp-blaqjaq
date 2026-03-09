@@ -2,16 +2,20 @@ import { useSpring } from '@react-spring/web';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { CardInHand, CardFront, CardBack, CardLabel } from '../styled/styled-components';
 
-const SUIT_SIGNS = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const SUIT_SIGNS: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
 
-export const Card = ({ rank, suit, faceDown, top }) => {
+interface CardProps {
+  rank: string;
+  suit: string;
+  faceDown?: boolean;
+  top?: boolean;
+}
+
+export const Card = ({ rank, suit, faceDown, top }: CardProps) => {
   const prefersReduced = useReducedMotion();
   const blackSuit = suit === 'S' || suit === 'C';
   const sign = SUIT_SIGNS[suit];
 
-  // Both faces always rendered. Spring drives rotateY.
-  // faceDown=true  -> back visible (rotateY 0), front hidden (rotateY 180)
-  // faceDown=false -> back hidden (rotateY -180), front visible (rotateY 0)
   const { rotateY } = useSpring({
     rotateY: faceDown ? 0 : -180,
     config: { mass: 6, tension: 400, friction: 60 },

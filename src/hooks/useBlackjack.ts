@@ -1,9 +1,11 @@
 import { useReducer, useCallback, useEffect, useMemo } from 'react';
-import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine.js';
-import { Phase, Action } from '../game/constants.js';
-import { evaluateHand, evaluateHandFull } from '../game/scoring.js';
+import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine';
+import type { GameState } from '../game/gameEngine';
+import { Phase, Action } from '../game/constants';
+import type { GameConfig } from '../game/constants';
+import { evaluateHand, evaluateHandFull } from '../game/scoring';
 
-export function useBlackjack(config = {}) {
+export function useBlackjack(config: Partial<GameConfig> = {}) {
   const [state, dispatch] = useReducer(
     gameReducer,
     config,
@@ -27,7 +29,6 @@ export function useBlackjack(config = {}) {
     [state.dealerHand]
   );
 
-  // Auto-advance dealer turn with delays
   useEffect(() => {
     if (state.phase === Phase.DEALER_TURN) {
       const timer = setTimeout(() => {
@@ -37,7 +38,6 @@ export function useBlackjack(config = {}) {
     }
   }, [state.phase, state.dealerHand.length]);
 
-  // Auto-settle after dealer is done
   useEffect(() => {
     if (state.phase === Phase.RESOLVING) {
       const timer = setTimeout(() => {
@@ -47,8 +47,7 @@ export function useBlackjack(config = {}) {
     }
   }, [state.phase]);
 
-  // Actions
-  const placeBet = useCallback((amount) => {
+  const placeBet = useCallback((amount: number) => {
     dispatch({ type: Action.PLACE_BET, payload: amount });
   }, []);
 
@@ -100,7 +99,6 @@ export function useBlackjack(config = {}) {
     dispatch({ type: Action.REBUY });
   }, []);
 
-  // UI flags
   const isPlayerTurn = state.phase === Phase.PLAYER_TURN;
   const handActive = isPlayerTurn && activeHand && activeHand.result === null;
   const showInsurance = state.insuranceOffered && !state.insuranceDecided;
@@ -108,14 +106,12 @@ export function useBlackjack(config = {}) {
   const bankrupt = state.phase === Phase.BETTING && isBankrupt(state.chips, state.config.minimumBet);
 
   return {
-    // State
     ...state,
     activeHand,
     playerEval,
     dealerEval,
     dealerFullEval,
 
-    // Actions
     placeBet,
     deal,
     hit,
@@ -130,7 +126,6 @@ export function useBlackjack(config = {}) {
     newRound,
     rebuy,
 
-    // UI flags
     canHit: handActive && !showInsurance && !showEvenMoney,
     canStand: handActive && !showInsurance && !showEvenMoney,
     canDouble: handActive && !showInsurance && !showEvenMoney && activeHand && canDoubleDown(activeHand, state.chips),

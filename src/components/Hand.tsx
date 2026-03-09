@@ -3,8 +3,10 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 import { Card } from './Card';
 import { Container, ActiveContainer, AnimatedResultOverlay } from '../styled/styled-components';
 import { Result } from '../game/constants';
+import type { ResultValue } from '../game/constants';
+import type { Card as CardType } from '../game/deck';
 
-const RESULT_DISPLAY = {
+const RESULT_DISPLAY: Record<ResultValue, { text: string; color: string }> = {
   [Result.PLAYER_BLACKJACK]: { text: 'BLACKJACK', color: 'gold' },
   [Result.PLAYER_WIN]: { text: 'WIN', color: '#4caf50' },
   [Result.DEALER_BUST]: { text: 'WIN', color: '#4caf50' },
@@ -14,12 +16,18 @@ const RESULT_DISPLAY = {
   [Result.SURRENDER]: { text: 'SURRENDER', color: 'grey' },
 };
 
-export const Hand = ({ cards = [], result, top, isActive }) => {
+interface HandProps {
+  cards?: CardType[];
+  result?: ResultValue | null;
+  top?: boolean;
+  isActive?: boolean;
+}
+
+export const Hand = ({ cards = [], result, top, isActive }: HandProps) => {
   const prefersReduced = useReducedMotion();
   const display = result ? RESULT_DISPLAY[result] : null;
   const Wrapper = isActive ? ActiveContainer : Container;
 
-  // Staggered card dealing: slide in from off-screen
   const trail = useTrail(cards.length, {
     from: { x: 300, y: top ? -200 : 200, opacity: 0, scale: 0.7 },
     to: { x: 0, y: 0, opacity: 1, scale: 1 },
@@ -27,7 +35,6 @@ export const Hand = ({ cards = [], result, top, isActive }) => {
     immediate: prefersReduced,
   });
 
-  // Result overlay slam: scale from 2.5 down to 1
   const resultTransition = useTransition(display, {
     from: { opacity: 0, scale: 2.5, blur: 10 },
     enter: { opacity: 1, scale: 1, blur: 0 },

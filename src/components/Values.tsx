@@ -5,7 +5,13 @@ import {
   ScoreDivider,
 } from '../styled/styled-components';
 
-export const Values = ({ playerValue, dealerValue, dealerHasRevealed }) => {
+interface ValuesProps {
+  playerValue: number | string;
+  dealerValue: number | string;
+  dealerHasRevealed: boolean;
+}
+
+export const Values = ({ playerValue, dealerValue, dealerHasRevealed }: ValuesProps) => {
   return (
     <ValuesContainer>
       <DealerValue>{dealerHasRevealed ? dealerValue : '?'}</DealerValue>

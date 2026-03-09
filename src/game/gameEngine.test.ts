@@ -1,24 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, gameReducer, canSplit, canDoubleDown, canSurrender, isBankrupt } from './gameEngine.js';
-import { Phase, Result, Action } from './constants.js';
+import { createInitialState, gameReducer, canSplit, canDoubleDown, canSurrender, isBankrupt } from './gameEngine';
+import type { GameState, Hand } from './gameEngine';
+import type { Card } from './deck';
+import { Phase, Result, Action } from './constants';
 
-// Helper: create a state with a known shoe for deterministic tests
-function stateWithShoe(cards, overrides = {}) {
+function stateWithShoe(cards: Card[], overrides: Partial<GameState> = {}): GameState {
   const base = createInitialState({ deckCount: 1 });
   return {
     ...base,
-    shoe: [...cards].reverse(), // reverse so first card in array is drawn first
+    shoe: [...cards].reverse(),
     ...overrides,
   };
 }
 
-// Helper: make a card
-function card(rank, suit = 'H') {
+function card(rank: string, suit = 'H'): Card {
   return { rank, suit };
 }
 
-// Helper: run through bet and deal
-function betAndDeal(state, betAmount = 100) {
+function betAndDeal(state: GameState, betAmount = 100): GameState {
   let s = gameReducer(state, { type: Action.PLACE_BET, payload: betAmount });
   s = gameReducer(s, { type: Action.DEAL });
   return s;
@@ -57,10 +56,8 @@ describe('PLACE_BET', () => {
 
 describe('DEAL', () => {
   it('deals 4 cards (2 to player, 2 to dealer)', () => {
-    // Shoe: P1, D1, P2, D2(faceDown)
     const shoe = [
       card('5'), card('8'), card('7'), card('3'),
-      // extra cards
       card('2'), card('2'), card('2'), card('2'),
     ];
     const state = stateWithShoe(shoe);
@@ -79,7 +76,6 @@ describe('DEAL', () => {
 
     expect(dealt.hands[0].result).toBe(Result.PLAYER_BLACKJACK);
     expect(dealt.phase).toBe(Phase.SETTLED);
-    // Blackjack pays 3:2: bet 100, payout = 100 + 150 = 250
     expect(dealt.chips).toBe(1000 - 100 + 250);
   });
 
@@ -90,7 +86,7 @@ describe('DEAL', () => {
 
     expect(dealt.hands[0].result).toBe(Result.PUSH);
     expect(dealt.phase).toBe(Phase.SETTLED);
-    expect(dealt.chips).toBe(1000); // bet returned
+    expect(dealt.chips).toBe(1000);
   });
 
   it('detects dealer blackjack with 10-value up card', () => {
@@ -100,7 +96,7 @@ describe('DEAL', () => {
 
     expect(dealt.hands[0].result).toBe(Result.DEALER_WIN);
     expect(dealt.phase).toBe(Phase.SETTLED);
-    expect(dealt.chips).toBe(900); // lost bet
+    expect(dealt.chips).toBe(900);
   });
 
   it('offers insurance when dealer shows Ace', () => {
@@ -116,7 +112,6 @@ describe('DEAL', () => {
 
 describe('HIT', () => {
   it('adds a card to the active hand', () => {
-    // Cards: P1=5, D1=8, P2=7, D2=3, next=4
     const shoe = [card('5'), card('8'), card('7'), card('3'), card('4')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -127,7 +122,6 @@ describe('HIT', () => {
   });
 
   it('detects bust on hit', () => {
-    // P1=K, D1=8, P2=7, D2=3, next=K (17 + 10 = bust)
     const shoe = [card('K'), card('8'), card('7'), card('3'), card('K')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -137,13 +131,11 @@ describe('HIT', () => {
   });
 
   it('auto-stands on 21', () => {
-    // P1=6, D1=8, P2=5, D2=3, next=K (6+5+10=21)
     const shoe = [card('6'), card('8'), card('5'), card('3'), card('K')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
     const hit = gameReducer(dealt, { type: Action.HIT });
 
-    // Should have advanced to dealer turn (since hand auto-stands at 21)
     expect(hit.phase).toBe(Phase.DEALER_TURN);
   });
 });
@@ -156,16 +148,14 @@ describe('STAND', () => {
     const stood = gameReducer(dealt, { type: Action.STAND });
 
     expect(stood.phase).toBe(Phase.DEALER_TURN);
-    // Dealer's faceDown card should be revealed
     expect(stood.dealerHand[1].faceDown).toBe(false);
   });
 });
 
 describe('DEALER_HIT', () => {
   it('dealer hits on 16', () => {
-    // Set up state where dealer has 16 and needs to hit
-    const shoe = [card('5')]; // dealer will draw this
-    const state = {
+    const shoe = [card('5')];
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.DEALER_TURN,
       hands: [{
@@ -182,7 +172,7 @@ describe('DEALER_HIT', () => {
   });
 
   it('dealer stands on hard 17', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.DEALER_TURN,
       hands: [{
@@ -196,48 +186,48 @@ describe('DEALER_HIT', () => {
 
     const next = gameReducer(state, { type: Action.DEALER_HIT });
     expect(next.phase).toBe(Phase.RESOLVING);
-    expect(next.dealerHand).toHaveLength(2); // did not draw
+    expect(next.dealerHand).toHaveLength(2);
   });
 
   it('dealer hits soft 17 when dealerHitsSoft17 is true', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState({ dealerHitsSoft17: true }),
       phase: Phase.DEALER_TURN,
       hands: [{
         cards: [card('K'), card('7')],
         bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false,
       }],
-      dealerHand: [card('A'), card('6')], // soft 17
+      dealerHand: [card('A'), card('6')],
       shoe: [card('3')],
       chips: 900,
     };
 
     const next = gameReducer(state, { type: Action.DEALER_HIT });
-    expect(next.dealerHand).toHaveLength(3); // drew a card
+    expect(next.dealerHand).toHaveLength(3);
   });
 
   it('dealer stands soft 17 when dealerHitsSoft17 is false', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState({ dealerHitsSoft17: false }),
       phase: Phase.DEALER_TURN,
       hands: [{
         cards: [card('K'), card('7')],
         bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false,
       }],
-      dealerHand: [card('A'), card('6')], // soft 17
+      dealerHand: [card('A'), card('6')],
       shoe: [card('3')],
       chips: 900,
     };
 
     const next = gameReducer(state, { type: Action.DEALER_HIT });
     expect(next.phase).toBe(Phase.RESOLVING);
-    expect(next.dealerHand).toHaveLength(2); // did not draw
+    expect(next.dealerHand).toHaveLength(2);
   });
 });
 
 describe('SETTLE', () => {
   it('player wins when beating dealer', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.RESOLVING,
       hands: [{
@@ -250,13 +240,13 @@ describe('SETTLE', () => {
 
     const next = gameReducer(state, { type: Action.SETTLE });
     expect(next.hands[0].result).toBe(Result.PLAYER_WIN);
-    expect(next.chips).toBe(1100); // 900 + 200
+    expect(next.chips).toBe(1100);
     expect(next.stats.wins).toBe(1);
     expect(next.phase).toBe(Phase.SETTLED);
   });
 
   it('dealer wins when beating player', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.RESOLVING,
       hands: [{
@@ -274,7 +264,7 @@ describe('SETTLE', () => {
   });
 
   it('push when equal values', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.RESOLVING,
       hands: [{
@@ -287,12 +277,12 @@ describe('SETTLE', () => {
 
     const next = gameReducer(state, { type: Action.SETTLE });
     expect(next.hands[0].result).toBe(Result.PUSH);
-    expect(next.chips).toBe(1000); // bet returned
+    expect(next.chips).toBe(1000);
     expect(next.stats.pushes).toBe(1);
   });
 
   it('player wins on dealer bust', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.RESOLVING,
       hands: [{
@@ -309,7 +299,7 @@ describe('SETTLE', () => {
   });
 
   it('skips hands that already have a result', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.RESOLVING,
       hands: [{
@@ -321,14 +311,13 @@ describe('SETTLE', () => {
     };
 
     const next = gameReducer(state, { type: Action.SETTLE });
-    expect(next.hands[0].result).toBe(Result.PLAYER_BUST); // unchanged
-    expect(next.chips).toBe(900); // no payout
+    expect(next.hands[0].result).toBe(Result.PLAYER_BUST);
+    expect(next.chips).toBe(900);
   });
 });
 
 describe('DOUBLE_DOWN', () => {
   it('doubles bet, draws one card, then advances', () => {
-    // P1=5, D1=8, P2=6, D2=3, next=K (5+6+10=21)
     const shoe = [card('5'), card('8'), card('6'), card('3'), card('K')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -337,13 +326,12 @@ describe('DOUBLE_DOWN', () => {
     expect(doubled.hands[0].cards).toHaveLength(3);
     expect(doubled.hands[0].bet).toBe(200);
     expect(doubled.hands[0].isDoubled).toBe(true);
-    expect(doubled.chips).toBe(800); // 1000 - 100 (initial) - 100 (double)
+    expect(doubled.chips).toBe(800);
   });
 
   it('rejects with insufficient chips', () => {
     const shoe = [card('5'), card('8'), card('6'), card('3'), card('K')];
     const state = stateWithShoe(shoe, { chips: 100 });
-    // After betting 100, chips = 0, cannot double
     const dealt = betAndDeal(state);
     expect(() => gameReducer(dealt, { type: Action.DOUBLE_DOWN })).toThrow('Insufficient');
   });
@@ -351,7 +339,6 @@ describe('DOUBLE_DOWN', () => {
 
 describe('SPLIT', () => {
   it('splits matching cards into two hands', () => {
-    // P1=8, D1=5, P2=8, D2=3, then two more cards for split hands
     const shoe = [card('8'), card('5'), card('8', 'S'), card('3'), card('6'), card('7')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -363,7 +350,7 @@ describe('SPLIT', () => {
     expect(split.hands[0].bet).toBe(100);
     expect(split.hands[1].bet).toBe(100);
     expect(split.hands[0].fromSplit).toBe(true);
-    expect(split.chips).toBe(800); // 1000 - 100 - 100
+    expect(split.chips).toBe(800);
   });
 
   it('rejects splitting non-matching cards', () => {
@@ -374,7 +361,6 @@ describe('SPLIT', () => {
   });
 
   it('allows splitting 10-value cards of different ranks', () => {
-    // K and Q both have value 10
     const shoe = [card('K'), card('5'), card('Q'), card('3'), card('6'), card('7')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -395,7 +381,6 @@ describe('SPLIT', () => {
 
 describe('INSURANCE', () => {
   it('pays 2:1 when dealer has blackjack', () => {
-    // Dealer shows Ace, hole card is K (blackjack)
     const shoe = [card('5'), card('A'), card('7'), card('K')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -403,10 +388,6 @@ describe('INSURANCE', () => {
     expect(dealt.insuranceOffered).toBe(true);
     const insured = gameReducer(dealt, { type: Action.INSURANCE });
 
-    // Insurance bet = 50 (half of 100)
-    // Insurance pays: 50 + 50*2 = 150
-    // Main bet lost: -100
-    // Net from starting: 1000 - 100 (bet) - 50 (insurance) + 150 (insurance payout) = 1000
     expect(insured.phase).toBe(Phase.SETTLED);
     expect(insured.hands[0].result).toBe(Result.DEALER_WIN);
   });
@@ -419,7 +400,6 @@ describe('INSURANCE', () => {
 
     expect(insured.phase).toBe(Phase.PLAYER_TURN);
     expect(insured.insuranceDecided).toBe(true);
-    // Lost the 50 insurance bet
     expect(insured.chips).toBe(1000 - 100 - 50);
   });
 });
@@ -433,7 +413,7 @@ describe('DECLINE_INSURANCE', () => {
 
     expect(declined.phase).toBe(Phase.PLAYER_TURN);
     expect(declined.insuranceDecided).toBe(true);
-    expect(declined.chips).toBe(900); // no insurance cost
+    expect(declined.chips).toBe(900);
   });
 
   it('dealer wins when has blackjack and insurance declined', () => {
@@ -455,7 +435,7 @@ describe('SURRENDER', () => {
     const surrendered = gameReducer(dealt, { type: Action.SURRENDER });
 
     expect(surrendered.hands[0].result).toBe(Result.SURRENDER);
-    expect(surrendered.chips).toBe(950); // 1000 - 100 + 50
+    expect(surrendered.chips).toBe(950);
     expect(surrendered.phase).toBe(Phase.SETTLED);
   });
 
@@ -470,7 +450,7 @@ describe('SURRENDER', () => {
 
 describe('NEW_ROUND', () => {
   it('resets state for new round', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.SETTLED,
       hands: [{
@@ -491,64 +471,62 @@ describe('NEW_ROUND', () => {
 
 describe('canSplit', () => {
   it('returns true for matching ranks', () => {
-    const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: false };
+    const hand: Hand = { cards: [card('8'), card('8', 'S')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canSplit(hand, 100, 1, 4)).toBe(true);
   });
 
   it('returns false for non-matching ranks', () => {
-    const hand = { cards: [card('8'), card('7')], bet: 100, fromSplit: false };
+    const hand: Hand = { cards: [card('8'), card('7')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canSplit(hand, 100, 1, 4)).toBe(false);
   });
 
   it('returns true for different 10-value cards', () => {
-    const hand = { cards: [card('K'), card('Q')], bet: 100, fromSplit: false };
+    const hand: Hand = { cards: [card('K'), card('Q')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canSplit(hand, 100, 1, 4)).toBe(true);
   });
 
   it('allows re-splitting when under max hands', () => {
-    const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: true };
+    const hand: Hand = { cards: [card('8'), card('8', 'S')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: true };
     expect(canSplit(hand, 100, 2, 4)).toBe(true);
   });
 
   it('returns false when at max split hands', () => {
-    const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: true };
+    const hand: Hand = { cards: [card('8'), card('8', 'S')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: true };
     expect(canSplit(hand, 100, 4, 4)).toBe(false);
   });
 
   it('returns false with insufficient chips', () => {
-    const hand = { cards: [card('8'), card('8', 'S')], bet: 100, fromSplit: false };
+    const hand: Hand = { cards: [card('8'), card('8', 'S')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canSplit(hand, 50, 1, 4)).toBe(false);
   });
 });
 
 describe('canDoubleDown', () => {
   it('returns true with two cards and enough chips', () => {
-    const hand = { cards: [card('5'), card('6')], bet: 100 };
+    const hand: Hand = { cards: [card('5'), card('6')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canDoubleDown(hand, 100)).toBe(true);
   });
 
   it('returns false with three cards', () => {
-    const hand = { cards: [card('5'), card('6'), card('3')], bet: 100 };
+    const hand: Hand = { cards: [card('5'), card('6'), card('3')], bet: 100, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canDoubleDown(hand, 100)).toBe(false);
   });
 });
 
 describe('canSurrender', () => {
   it('returns true with two cards not from split', () => {
-    const hand = { cards: [card('5'), card('6')], fromSplit: false };
+    const hand: Hand = { cards: [card('5'), card('6')], bet: 0, result: null, isDoubled: false, isSurrendered: false, fromSplit: false };
     expect(canSurrender(hand)).toBe(true);
   });
 
   it('returns false from split', () => {
-    const hand = { cards: [card('5'), card('6')], fromSplit: true };
+    const hand: Hand = { cards: [card('5'), card('6')], bet: 0, result: null, isDoubled: false, isSurrendered: false, fromSplit: true };
     expect(canSurrender(hand)).toBe(false);
   });
 });
 
 describe('Re-splitting', () => {
   it('allows splitting a hand that came from a split', () => {
-    // P1=8H, D1=5, P2=8S, D2=3, split cards: 8C, 7 (first hand gets another 8)
-    // Then re-split the first hand: new cards 6, 9
     const shoe = [
       card('8'), card('5'), card('8', 'S'), card('3'),
       card('8', 'C'), card('7'),
@@ -557,21 +535,17 @@ describe('Re-splitting', () => {
     const state = stateWithShoe(shoe, { chips: 1000 });
     const dealt = betAndDeal(state);
 
-    // First split: 8H and 8S
     const split1 = gameReducer(dealt, { type: Action.SPLIT });
     expect(split1.hands).toHaveLength(2);
-    // Hand 0: [8H, 8C] (another pair!)
     expect(split1.hands[0].cards[0].rank).toBe('8');
     expect(split1.hands[0].cards[1].rank).toBe('8');
 
-    // Re-split hand 0
     const split2 = gameReducer(split1, { type: Action.SPLIT });
     expect(split2.hands).toHaveLength(3);
-    expect(split2.chips).toBe(1000 - 100 - 100 - 100); // 3 bets
+    expect(split2.chips).toBe(1000 - 100 - 100 - 100);
   });
 
   it('blocks splitting when at max hands', () => {
-    // Set maxSplitHands to 2 so only one split is allowed
     const shoe = [
       card('8'), card('5'), card('8', 'S'), card('3'),
       card('8', 'C'), card('7'),
@@ -584,14 +558,12 @@ describe('Re-splitting', () => {
     const split1 = gameReducer(dealt, { type: Action.SPLIT });
     expect(split1.hands).toHaveLength(2);
 
-    // Try re-split, should fail because we're at max
     expect(() => gameReducer(split1, { type: Action.SPLIT })).toThrow('Cannot split');
   });
 });
 
 describe('EVEN_MONEY', () => {
   it('offers even money when player has blackjack and dealer shows Ace', () => {
-    // Player: A, K (blackjack), Dealer: A, 3
     const shoe = [card('A'), card('A', 'S'), card('K'), card('3')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -609,12 +581,10 @@ describe('EVEN_MONEY', () => {
 
     expect(even.phase).toBe('settled');
     expect(even.hands[0].result).toBe(Result.PLAYER_BLACKJACK);
-    // Even money: bet 100 returned + 100 win = 1000 - 100 + 200 = 1100
     expect(even.chips).toBe(1100);
   });
 
   it('pays 3:2 when even money declined and dealer has no blackjack', () => {
-    // Player: A, K, Dealer: A, 3 (no BJ)
     const shoe = [card('A'), card('A', 'S'), card('K'), card('3')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -622,12 +592,10 @@ describe('EVEN_MONEY', () => {
 
     expect(declined.phase).toBe('settled');
     expect(declined.hands[0].result).toBe(Result.PLAYER_BLACKJACK);
-    // 3:2 payout: 100 + 150 = 250 returned, so 900 + 250 = 1150
     expect(declined.chips).toBe(1150);
   });
 
   it('pushes when even money declined and dealer also has blackjack', () => {
-    // Player: A, K, Dealer: A, K (both BJ)
     const shoe = [card('A'), card('A', 'S'), card('K'), card('K', 'S')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
@@ -635,13 +603,13 @@ describe('EVEN_MONEY', () => {
 
     expect(declined.phase).toBe('settled');
     expect(declined.hands[0].result).toBe(Result.PUSH);
-    expect(declined.chips).toBe(1000); // bet returned
+    expect(declined.chips).toBe(1000);
   });
 });
 
 describe('REBUY', () => {
   it('resets chips to starting amount when bankrupt', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.SETTLED,
       chips: 0,
@@ -657,7 +625,7 @@ describe('REBUY', () => {
   });
 
   it('rejects rebuy when player still has chips to play', () => {
-    const state = {
+    const state: GameState = {
       ...createInitialState(),
       phase: Phase.SETTLED,
       chips: 100,

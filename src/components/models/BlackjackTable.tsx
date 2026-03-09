@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
 
-const MODEL_PATH = '/models/colt_m1911/scene.gltf';
+const MODEL_PATH = '/models/blackjack_table/scene.glb';
 
-export function Colt1911() {
+export function BlackjackTable() {
   const { scene } = useGLTF(MODEL_PATH);
 
   useEffect(() => {
     scene.traverse((child) => {
-      if (child.isMesh) {
+      if (child instanceof THREE.Mesh) {
         child.castShadow = true;
         child.receiveShadow = true;
       }
@@ -16,7 +17,7 @@ export function Colt1911() {
   }, [scene]);
 
   return (
-    <group position={[-0.5, 0.07, -0.2]} scale={[1.2, 0.8, 0.8]} rotation={[0, -Math.PI / -3, 1.5]}>
+    <group position={[0, 0, 0]} scale={[0.005, 0.005, 0.005]}>
       <primitive object={scene} />
     </group>
   );

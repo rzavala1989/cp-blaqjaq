@@ -1,8 +1,59 @@
-import { Phase, Result, Action, DEFAULT_CONFIG } from './constants.js';
-import { evaluateHandFull } from './scoring.js';
-import { createShoe, drawCard, needsReshuffle } from './deck.js';
+import { Phase, Result, Action, DEFAULT_CONFIG } from './constants';
+import type { PhaseValue, ResultValue, GameConfig } from './constants';
+import { evaluateHandFull } from './scoring';
+import { createShoe, drawCard, needsReshuffle } from './deck';
+import type { Card } from './deck';
 
-function createEmptyHand() {
+export interface Hand {
+  cards: Card[];
+  bet: number;
+  result: ResultValue | null;
+  isDoubled: boolean;
+  isSurrendered: boolean;
+  fromSplit: boolean;
+}
+
+export interface Stats {
+  wins: number;
+  losses: number;
+  pushes: number;
+  blackjacks: number;
+}
+
+export interface GameState {
+  shoe: Card[];
+  config: GameConfig;
+  phase: PhaseValue;
+  hands: Hand[];
+  activeHandIndex: number;
+  dealerHand: Card[];
+  insuranceBet: number;
+  insuranceOffered: boolean;
+  insuranceDecided: boolean;
+  evenMoneyOffered: boolean;
+  evenMoneyDecided: boolean;
+  chips: number;
+  stats: Stats;
+}
+
+export type GameAction =
+  | { type: typeof Action.PLACE_BET; payload: number }
+  | { type: typeof Action.DEAL }
+  | { type: typeof Action.HIT }
+  | { type: typeof Action.STAND }
+  | { type: typeof Action.DOUBLE_DOWN }
+  | { type: typeof Action.SPLIT }
+  | { type: typeof Action.INSURANCE }
+  | { type: typeof Action.DECLINE_INSURANCE }
+  | { type: typeof Action.EVEN_MONEY }
+  | { type: typeof Action.DECLINE_EVEN_MONEY }
+  | { type: typeof Action.SURRENDER }
+  | { type: typeof Action.DEALER_HIT }
+  | { type: typeof Action.SETTLE }
+  | { type: typeof Action.NEW_ROUND }
+  | { type: typeof Action.REBUY };
+
+function createEmptyHand(): Hand {
   return {
     cards: [],
     bet: 0,
@@ -13,8 +64,8 @@ function createEmptyHand() {
   };
 }
 
-export function createInitialState(config = {}) {
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+export function createInitialState(config: Partial<GameConfig> = {}): GameState {
+  const mergedConfig: GameConfig = { ...DEFAULT_CONFIG, ...config };
   return {
     shoe: createShoe(mergedConfig.deckCount),
     config: mergedConfig,
@@ -34,28 +85,28 @@ export function createInitialState(config = {}) {
 
 // --- Internal helpers ---
 
-function draw(shoe) {
+function draw(shoe: Card[]): [Card, Card[]] {
   const [card, remaining] = drawCard(shoe);
   return [card, remaining];
 }
 
-function drawFaceDown(shoe) {
+function drawFaceDown(shoe: Card[]): [Card, Card[]] {
   const [card, remaining] = drawCard(shoe);
   return [{ ...card, faceDown: true }, remaining];
 }
 
-function dealerMustHit(dealerHand, config) {
+function dealerMustHit(dealerHand: Card[], config: GameConfig): boolean {
   const { value, isSoft } = evaluateHandFull(dealerHand);
   if (value < 17) return true;
   if (value === 17 && isSoft && config.dealerHitsSoft17) return true;
   return false;
 }
 
-function revealDealerHand(dealerHand) {
+function revealDealerHand(dealerHand: Card[]): Card[] {
   return dealerHand.map((card) => ({ ...card, faceDown: false }));
 }
 
-function advanceHand(state) {
+function advanceHand(state: GameState): GameState {
   const nextIndex = state.activeHandIndex + 1;
 
   if (nextIndex < state.hands.length) {
@@ -63,12 +114,9 @@ function advanceHand(state) {
     if (nextHand.result === null) {
       return { ...state, activeHandIndex: nextIndex };
     }
-    // If next hand already has a result (e.g. split aces auto-stood),
-    // try the one after that
     return advanceHand({ ...state, activeHandIndex: nextIndex });
   }
 
-  // All hands played. Check if all hands busted/surrendered.
   const allHandsDone = state.hands.every(
     (h) => h.result === Result.PLAYER_BUST || h.result === Result.SURRENDER
   );
@@ -77,7 +125,6 @@ function advanceHand(state) {
     return { ...state, phase: Phase.RESOLVING };
   }
 
-  // Reveal dealer cards and start dealer turn
   return {
     ...state,
     dealerHand: revealDealerHand(state.dealerHand),
@@ -87,7 +134,7 @@ function advanceHand(state) {
 
 // --- Action handlers ---
 
-function handlePlaceBet(state, amount) {
+function handlePlaceBet(state: GameState, amount: number): GameState {
   if (state.phase !== Phase.BETTING) {
     throw new Error(`Cannot place bet during ${state.phase}`);
   }
@@ -101,7 +148,7 @@ function handlePlaceBet(state, amount) {
     throw new Error('Insufficient chips');
   }
 
-  const hands = [{ ...createEmptyHand(), bet: amount }];
+  const hands: Hand[] = [{ ...createEmptyHand(), bet: amount }];
   return {
     ...state,
     chips: state.chips - amount,
@@ -110,15 +157,14 @@ function handlePlaceBet(state, amount) {
   };
 }
 
-function handleDeal(state) {
+function handleDeal(state: GameState): GameState {
   if (state.phase !== Phase.DEALING) {
     throw new Error(`Cannot deal during ${state.phase}`);
   }
 
   let shoe = state.shoe;
 
-  // Deal: player, dealer, player, dealer(faceDown)
-  let playerCard1, playerCard2, dealerCard1, dealerCard2;
+  let playerCard1: Card, playerCard2: Card, dealerCard1: Card, dealerCard2: Card;
   [playerCard1, shoe] = draw(shoe);
   [dealerCard1, shoe] = draw(shoe);
   [playerCard2, shoe] = draw(shoe);
@@ -130,9 +176,9 @@ function handleDeal(state) {
   const playerEval = evaluateHandFull(playerCards);
   const dealerEval = evaluateHandFull(dealerCards);
 
-  const hands = [{ ...state.hands[0], cards: playerCards }];
+  const hands: Hand[] = [{ ...state.hands[0], cards: playerCards }];
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     shoe,
     hands,
@@ -140,9 +186,7 @@ function handleDeal(state) {
     activeHandIndex: 0,
   };
 
-  // Check for naturals
   if (playerEval.isBlackjack && dealerCard1.rank === 'A') {
-    // Player has blackjack, dealer shows Ace: offer even money
     newState.evenMoneyOffered = true;
     newState.evenMoneyDecided = false;
     newState.phase = Phase.PLAYER_TURN;
@@ -150,7 +194,6 @@ function handleDeal(state) {
   }
 
   if (playerEval.isBlackjack && dealerEval.isBlackjack) {
-    // Both have blackjack: push
     newState.hands = [{ ...hands[0], result: Result.PUSH }];
     newState.dealerHand = revealDealerHand(dealerCards);
     newState.chips = newState.chips + hands[0].bet;
@@ -160,7 +203,6 @@ function handleDeal(state) {
   }
 
   if (playerEval.isBlackjack) {
-    // Player blackjack, dealer does not show Ace
     const payout = hands[0].bet + hands[0].bet * state.config.blackjackPayout;
     newState.hands = [{ ...hands[0], result: Result.PLAYER_BLACKJACK }];
     newState.dealerHand = revealDealerHand(dealerCards);
@@ -174,7 +216,6 @@ function handleDeal(state) {
     return newState;
   }
 
-  // Check if dealer shows Ace (offer insurance)
   if (dealerCard1.rank === 'A') {
     newState.insuranceOffered = true;
     newState.insuranceDecided = false;
@@ -182,7 +223,6 @@ function handleDeal(state) {
     return newState;
   }
 
-  // Check if dealer has blackjack (when showing 10-value card)
   if (dealerEval.isBlackjack) {
     newState.hands = [{ ...hands[0], result: Result.DEALER_WIN }];
     newState.dealerHand = revealDealerHand(dealerCards);
@@ -195,7 +235,7 @@ function handleDeal(state) {
   return newState;
 }
 
-function handleHit(state) {
+function handleHit(state: GameState): GameState {
   if (state.phase !== Phase.PLAYER_TURN) {
     throw new Error(`Cannot hit during ${state.phase}`);
   }
@@ -206,17 +246,17 @@ function handleHit(state) {
   }
 
   let shoe = state.shoe;
-  let card;
+  let card: Card;
   [card, shoe] = draw(shoe);
 
   const newCards = [...hand.cards, card];
   const eval_ = evaluateHandFull(newCards);
 
-  const updatedHand = { ...hand, cards: newCards };
+  const updatedHand: Hand = { ...hand, cards: newCards };
   const newHands = [...state.hands];
   newHands[state.activeHandIndex] = updatedHand;
 
-  let newState = { ...state, shoe, hands: newHands };
+  let newState: GameState = { ...state, shoe, hands: newHands };
 
   if (eval_.isBust) {
     newHands[state.activeHandIndex] = { ...updatedHand, result: Result.PLAYER_BUST };
@@ -226,21 +266,20 @@ function handleHit(state) {
   }
 
   if (eval_.value === 21) {
-    // Auto-stand on 21
     return advanceHand(newState);
   }
 
   return newState;
 }
 
-function handleStand(state) {
+function handleStand(state: GameState): GameState {
   if (state.phase !== Phase.PLAYER_TURN) {
     throw new Error(`Cannot stand during ${state.phase}`);
   }
   return advanceHand(state);
 }
 
-function handleDoubleDown(state) {
+function handleDoubleDown(state: GameState): GameState {
   if (state.phase !== Phase.PLAYER_TURN) {
     throw new Error(`Cannot double down during ${state.phase}`);
   }
@@ -254,13 +293,13 @@ function handleDoubleDown(state) {
   }
 
   let shoe = state.shoe;
-  let card;
+  let card: Card;
   [card, shoe] = draw(shoe);
 
   const newCards = [...hand.cards, card];
   const eval_ = evaluateHandFull(newCards);
 
-  const updatedHand = {
+  const updatedHand: Hand = {
     ...hand,
     cards: newCards,
     bet: hand.bet * 2,
@@ -270,7 +309,7 @@ function handleDoubleDown(state) {
   const newHands = [...state.hands];
   newHands[state.activeHandIndex] = updatedHand;
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     shoe,
     hands: newHands,
@@ -283,11 +322,10 @@ function handleDoubleDown(state) {
     newState.stats = { ...newState.stats, losses: newState.stats.losses + 1 };
   }
 
-  // Always advance after double down (one card only)
   return advanceHand(newState);
 }
 
-function handleSplit(state) {
+function handleSplit(state: GameState): GameState {
   if (state.phase !== Phase.PLAYER_TURN) {
     throw new Error(`Cannot split during ${state.phase}`);
   }
@@ -298,34 +336,30 @@ function handleSplit(state) {
   }
 
   let shoe = state.shoe;
-  let card1, card2;
+  let card1: Card, card2: Card;
   [card1, shoe] = draw(shoe);
   [card2, shoe] = draw(shoe);
 
   const isAces = hand.cards[0].rank === 'A';
 
-  const hand1 = {
+  const hand1: Hand = {
     ...createEmptyHand(),
     cards: [hand.cards[0], card1],
     bet: hand.bet,
     fromSplit: true,
   };
 
-  const hand2 = {
+  const hand2: Hand = {
     ...createEmptyHand(),
     cards: [hand.cards[1], card2],
     bet: hand.bet,
     fromSplit: true,
   };
 
-  // Split aces: one card each, auto-stand
   if (isAces) {
-    // Check if either hand hit 21 (not counted as blackjack from split)
     const eval1 = evaluateHandFull(hand1.cards);
     const eval2 = evaluateHandFull(hand2.cards);
 
-    // No result set for 21 from split, they just auto-stand
-    // But bust is still possible (not really with aces, but for correctness)
     if (eval1.isBust) hand1.result = Result.PLAYER_BUST;
     if (eval2.isBust) hand2.result = Result.PLAYER_BUST;
   }
@@ -333,7 +367,7 @@ function handleSplit(state) {
   const newHands = [...state.hands];
   newHands.splice(state.activeHandIndex, 1, hand1, hand2);
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     shoe,
     hands: newHands,
@@ -341,7 +375,6 @@ function handleSplit(state) {
   };
 
   if (isAces) {
-    // All split ace hands auto-stand, go to dealer
     const allDone = newState.hands.every(
       (h) => h.result === Result.PLAYER_BUST || h.result === Result.SURRENDER || h.fromSplit
     );
@@ -358,7 +391,7 @@ function handleSplit(state) {
   return newState;
 }
 
-function handleInsurance(state) {
+function handleInsurance(state: GameState): GameState {
   if (!state.insuranceOffered || state.insuranceDecided) {
     throw new Error('Insurance not available');
   }
@@ -370,7 +403,7 @@ function handleInsurance(state) {
 
   const dealerEval = evaluateHandFull(state.dealerHand);
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     insuranceBet,
     insuranceDecided: true,
@@ -378,14 +411,11 @@ function handleInsurance(state) {
   };
 
   if (dealerEval.isBlackjack) {
-    // Insurance pays out
     const insurancePayout = insuranceBet + insuranceBet * state.config.insurancePayout;
     newState.chips += insurancePayout;
 
-    // Check player blackjack
     const playerEval = evaluateHandFull(state.hands[0].cards);
     if (playerEval.isBlackjack) {
-      // Push on main bet
       newState.hands = [{ ...state.hands[0], result: Result.PUSH }];
       newState.chips += state.hands[0].bet;
       newState.stats = { ...newState.stats, pushes: newState.stats.pushes + 1 };
@@ -398,18 +428,17 @@ function handleInsurance(state) {
     return newState;
   }
 
-  // Dealer does not have blackjack, insurance bet lost, continue playing
   return { ...newState, phase: Phase.PLAYER_TURN };
 }
 
-function handleDeclineInsurance(state) {
+function handleDeclineInsurance(state: GameState): GameState {
   if (!state.insuranceOffered || state.insuranceDecided) {
     throw new Error('Insurance not available');
   }
 
   const dealerEval = evaluateHandFull(state.dealerHand);
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     insuranceDecided: true,
   };
@@ -432,12 +461,11 @@ function handleDeclineInsurance(state) {
   return { ...newState, phase: Phase.PLAYER_TURN };
 }
 
-function handleEvenMoney(state) {
+function handleEvenMoney(state: GameState): GameState {
   if (!state.evenMoneyOffered || state.evenMoneyDecided) {
     throw new Error('Even money not available');
   }
 
-  // Pay 1:1 immediately (guaranteed win, no risk of push)
   const bet = state.hands[0].bet;
   return {
     ...state,
@@ -454,20 +482,19 @@ function handleEvenMoney(state) {
   };
 }
 
-function handleDeclineEvenMoney(state) {
+function handleDeclineEvenMoney(state: GameState): GameState {
   if (!state.evenMoneyOffered || state.evenMoneyDecided) {
     throw new Error('Even money not available');
   }
 
   const dealerEval = evaluateHandFull(state.dealerHand);
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     evenMoneyDecided: true,
   };
 
   if (dealerEval.isBlackjack) {
-    // Both have blackjack: push
     newState.hands = [{ ...state.hands[0], result: Result.PUSH }];
     newState.dealerHand = revealDealerHand(state.dealerHand);
     newState.chips = newState.chips + state.hands[0].bet;
@@ -476,7 +503,6 @@ function handleDeclineEvenMoney(state) {
     return newState;
   }
 
-  // Dealer doesn't have blackjack: player gets full 3:2
   const payout = state.hands[0].bet + state.hands[0].bet * state.config.blackjackPayout;
   newState.hands = [{ ...state.hands[0], result: Result.PLAYER_BLACKJACK }];
   newState.dealerHand = revealDealerHand(state.dealerHand);
@@ -490,7 +516,7 @@ function handleDeclineEvenMoney(state) {
   return newState;
 }
 
-function handleSurrender(state) {
+function handleSurrender(state: GameState): GameState {
   if (state.phase !== Phase.PLAYER_TURN) {
     throw new Error(`Cannot surrender during ${state.phase}`);
   }
@@ -504,7 +530,7 @@ function handleSurrender(state) {
   }
 
   const halfBet = Math.floor(hand.bet / 2);
-  const updatedHand = { ...hand, result: Result.SURRENDER, isSurrendered: true };
+  const updatedHand: Hand = { ...hand, result: Result.SURRENDER, isSurrendered: true };
 
   const newHands = [...state.hands];
   newHands[state.activeHandIndex] = updatedHand;
@@ -518,33 +544,30 @@ function handleSurrender(state) {
   };
 }
 
-function handleDealerHit(state) {
+function handleDealerHit(state: GameState): GameState {
   if (state.phase !== Phase.DEALER_TURN) {
     throw new Error(`Dealer cannot hit during ${state.phase}`);
   }
 
   const dealerEval = evaluateHandFull(state.dealerHand);
 
-  // Check if dealer should stand
   if (!dealerMustHit(state.dealerHand, state.config) || dealerEval.isBust) {
     return { ...state, phase: Phase.RESOLVING };
   }
 
-  // Dealer draws a card
   let shoe = state.shoe;
-  let card;
+  let card: Card;
   [card, shoe] = draw(shoe);
 
   const newDealerHand = [...state.dealerHand, card];
   const newEval = evaluateHandFull(newDealerHand);
 
-  let newState = {
+  let newState: GameState = {
     ...state,
     shoe,
     dealerHand: newDealerHand,
   };
 
-  // Check if dealer should stop after this card
   if (newEval.isBust || !dealerMustHit(newDealerHand, state.config)) {
     newState.phase = Phase.RESOLVING;
   }
@@ -552,7 +575,7 @@ function handleDealerHit(state) {
   return newState;
 }
 
-function handleSettle(state) {
+function handleSettle(state: GameState): GameState {
   if (state.phase !== Phase.RESOLVING) {
     throw new Error(`Cannot settle during ${state.phase}`);
   }
@@ -562,8 +585,7 @@ function handleSettle(state) {
 
   let chips = state.chips;
   let stats = { ...state.stats };
-  const settledHands = state.hands.map((hand) => {
-    // Already resolved (bust, surrender)
+  const settledHands: Hand[] = state.hands.map((hand) => {
     if (hand.result !== null) return hand;
 
     const playerEval = evaluateHandFull(hand.cards);
@@ -585,7 +607,6 @@ function handleSettle(state) {
       return { ...hand, result: Result.DEALER_WIN };
     }
 
-    // Equal value: push
     chips += hand.bet;
     stats.pushes++;
     return { ...hand, result: Result.PUSH };
@@ -600,7 +621,7 @@ function handleSettle(state) {
   };
 }
 
-function handleNewRound(state) {
+function handleNewRound(state: GameState): GameState {
   if (state.phase !== Phase.SETTLED) {
     throw new Error(`Cannot start new round during ${state.phase}`);
   }
@@ -625,7 +646,7 @@ function handleNewRound(state) {
   };
 }
 
-function handleRebuy(state) {
+function handleRebuy(state: GameState): GameState {
   if (state.phase !== Phase.SETTLED) {
     throw new Error(`Cannot rebuy during ${state.phase}`);
   }
@@ -641,7 +662,7 @@ function handleRebuy(state) {
 
 // --- Main reducer ---
 
-export function gameReducer(state, action) {
+export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case Action.PLACE_BET:
       return handlePlaceBet(state, action.payload);
@@ -674,13 +695,13 @@ export function gameReducer(state, action) {
     case Action.REBUY:
       return handleRebuy(state);
     default:
-      throw new Error(`Unknown action: ${action.type}`);
+      throw new Error(`Unknown action: ${(action as GameAction).type}`);
   }
 }
 
 // --- Exported helpers for UI ---
 
-export function canSplit(hand, chips, totalHands = 1, maxSplitHands = 4) {
+export function canSplit(hand: Hand, chips: number, totalHands = 1, maxSplitHands = 4): boolean {
   if (hand.cards.length !== 2) return false;
   if (totalHands >= maxSplitHands) return false;
   const rank1 = hand.cards[0].rank;
@@ -690,14 +711,14 @@ export function canSplit(hand, chips, totalHands = 1, maxSplitHands = 4) {
   return val1 === val2 && chips >= hand.bet;
 }
 
-export function canDoubleDown(hand, chips) {
+export function canDoubleDown(hand: Hand, chips: number): boolean {
   return hand.cards.length === 2 && chips >= hand.bet;
 }
 
-export function canSurrender(hand) {
+export function canSurrender(hand: Hand): boolean {
   return hand.cards.length === 2 && !hand.fromSplit;
 }
 
-export function isBankrupt(chips, minimumBet) {
+export function isBankrupt(chips: number, minimumBet: number): boolean {
   return chips < minimumBet;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createDeck, createShoe, drawCard, needsReshuffle } from './deck.js';
+import { createDeck, createShoe, drawCard, needsReshuffle } from './deck';
 
 describe('createDeck', () => {
   it('creates 52 cards', () => {
@@ -68,14 +68,14 @@ describe('needsReshuffle', () => {
   });
 
   it('returns true when past threshold', () => {
-    const totalCards = 6 * 52; // 312
-    const shoe = new Array(Math.floor(totalCards * 0.2)); // 20% remaining (80% dealt)
+    const totalCards = 6 * 52;
+    const shoe = new Array(Math.floor(totalCards * 0.2));
     expect(needsReshuffle(shoe, 6, 0.75)).toBe(true);
   });
 
   it('returns false when just below threshold', () => {
     const totalCards = 6 * 52;
-    const shoe = new Array(Math.floor(totalCards * 0.3)); // 70% dealt
+    const shoe = new Array(Math.floor(totalCards * 0.3));
     expect(needsReshuffle(shoe, 6, 0.75)).toBe(false);
   });
 });

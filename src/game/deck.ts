@@ -1,10 +1,16 @@
 import shuffle from 'lodash/shuffle';
 
-const SUITS = ['H', 'D', 'S', 'C'];
-const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+export interface Card {
+  rank: string;
+  suit: string;
+  faceDown?: boolean;
+}
 
-export function createDeck() {
-  const deck = [];
+const SUITS = ['H', 'D', 'S', 'C'] as const;
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] as const;
+
+export function createDeck(): Card[] {
+  const deck: Card[] = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
       deck.push({ rank, suit });
@@ -13,15 +19,15 @@ export function createDeck() {
   return deck;
 }
 
-export function createShoe(deckCount = 6) {
-  const shoe = [];
+export function createShoe(deckCount = 6): Card[] {
+  const shoe: Card[] = [];
   for (let i = 0; i < deckCount; i++) {
     shoe.push(...createDeck());
   }
   return shuffle(shoe);
 }
 
-export function drawCard(shoe) {
+export function drawCard(shoe: Card[]): [Card, Card[]] {
   if (shoe.length === 0) {
     throw new Error('Shoe is empty');
   }
@@ -30,7 +36,7 @@ export function drawCard(shoe) {
   return [card, remaining];
 }
 
-export function needsReshuffle(shoe, deckCount = 6, threshold = 0.75) {
+export function needsReshuffle(shoe: Card[], deckCount = 6, threshold = 0.75): boolean {
   const totalCards = deckCount * 52;
   const cardsDealt = totalCards - shoe.length;
   return cardsDealt / totalCards >= threshold;

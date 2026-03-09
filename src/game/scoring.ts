@@ -1,6 +1,15 @@
+import type { Card } from './deck';
+
 const FACE_CARDS = ['K', 'Q', 'J'];
 
-function evaluate(cards) {
+export interface HandEvaluation {
+  value: number;
+  isSoft: boolean;
+  isBlackjack: boolean;
+  isBust: boolean;
+}
+
+function evaluate(cards: Card[]): HandEvaluation {
   let aceCount = 0;
   let hardTotal = 0;
 
@@ -28,11 +37,11 @@ function evaluate(cards) {
   return { value, isSoft, isBlackjack, isBust };
 }
 
-export function evaluateHand(cards) {
+export function evaluateHand(cards: Card[]): HandEvaluation {
   const visibleCards = cards.filter((c) => !c.faceDown);
   return evaluate(visibleCards);
 }
 
-export function evaluateHandFull(cards) {
+export function evaluateHandFull(cards: Card[]): HandEvaluation {
   return evaluate(cards);
 }
