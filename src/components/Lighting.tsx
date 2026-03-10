@@ -3,17 +3,17 @@ export function Lighting() {
     <>
       <spotLight
         position={[0, 8, 0]}
-        color="#ffd97d"
-        intensity={12}
-        angle={Math.PI / 7}
-        penumbra={0.4}
-        castShadow={true}
+        color="#ffffff"
+        intensity={30}
+        angle={Math.PI / 6}
+        penumbra={0.5}
+        castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
       />
-      <ambientLight color="#0a0a14" intensity={0.3} />
-      <pointLight position={[-4, 2, -2]} color="#ff6b35" intensity={0.7} />
-      <pointLight position={[4, 1, 2]} color="#1a1a3e" intensity={0.9} />
+      <hemisphereLight args={['#ffffff', '#ffffff', 1.4]} />
+      <pointLight position={[-3, 4, 3]} color="#ffffff" intensity={4} />
+      <pointLight position={[4, 3, -3]} color="#ffffff" intensity={2} />
     </>
   );
 }

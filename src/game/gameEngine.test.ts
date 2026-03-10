@@ -83,20 +83,24 @@ describe('DEAL', () => {
     const shoe = [card('A'), card('K'), card('K'), card('A')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
+    expect(dealt.phase).toBe(Phase.PEEKING);
+    const peeked = gameReducer(dealt, { type: Action.PEEK });
 
-    expect(dealt.hands[0].result).toBe(Result.PUSH);
-    expect(dealt.phase).toBe(Phase.SETTLED);
-    expect(dealt.chips).toBe(1000);
+    expect(peeked.hands[0].result).toBe(Result.PUSH);
+    expect(peeked.phase).toBe(Phase.SETTLED);
+    expect(peeked.chips).toBe(1000);
   });
 
   it('detects dealer blackjack with 10-value up card', () => {
     const shoe = [card('5'), card('K'), card('7'), card('A')];
     const state = stateWithShoe(shoe);
     const dealt = betAndDeal(state);
+    expect(dealt.phase).toBe(Phase.PEEKING);
+    const peeked = gameReducer(dealt, { type: Action.PEEK });
 
-    expect(dealt.hands[0].result).toBe(Result.DEALER_WIN);
-    expect(dealt.phase).toBe(Phase.SETTLED);
-    expect(dealt.chips).toBe(900);
+    expect(peeked.hands[0].result).toBe(Result.DEALER_WIN);
+    expect(peeked.phase).toBe(Phase.SETTLED);
+    expect(peeked.chips).toBe(900);
   });
 
   it('offers insurance when dealer shows Ace', () => {
@@ -106,7 +110,7 @@ describe('DEAL', () => {
 
     expect(dealt.insuranceOffered).toBe(true);
     expect(dealt.insuranceDecided).toBe(false);
-    expect(dealt.phase).toBe(Phase.PLAYER_TURN);
+    expect(dealt.phase).toBe(Phase.PEEKING);
   });
 });
 
@@ -570,7 +574,7 @@ describe('EVEN_MONEY', () => {
 
     expect(dealt.evenMoneyOffered).toBe(true);
     expect(dealt.evenMoneyDecided).toBe(false);
-    expect(dealt.phase).toBe('player-turn');
+    expect(dealt.phase).toBe('peeking');
   });
 
   it('pays 1:1 immediately when even money accepted', () => {

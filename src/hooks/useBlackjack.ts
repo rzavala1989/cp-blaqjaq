@@ -1,16 +1,28 @@
-import { useReducer, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine';
-import type { GameState } from '../game/gameEngine';
+import type { GameState, GameAction } from '../game/gameEngine';
 import { Phase, Action } from '../game/constants';
 import type { GameConfig } from '../game/constants';
 import { evaluateHand, evaluateHandFull } from '../game/scoring';
 
 export function useBlackjack(config: Partial<GameConfig> = {}) {
-  const [state, dispatch] = useReducer(
-    gameReducer,
-    config,
-    (cfg) => createInitialState(cfg)
-  );
+  const [state, setState] = useState<GameState>(() => createInitialState(config));
+
+  const dispatch = useCallback((action: GameAction) => {
+    setState(prev => gameReducer(prev, action));
+  }, []);
+
+  const resetGame = useCallback(() => {
+    setState(createInitialState(config));
+  }, [config]);
+
+  // Atomic bet + deal in a single state update — avoids two-step setState in UI
+  const dealRound = useCallback((amount: number) => {
+    setState(prev => {
+      const afterBet = gameReducer(prev, { type: Action.PLACE_BET, payload: amount });
+      return gameReducer(afterBet, { type: Action.DEAL });
+    });
+  }, []);
 
   const activeHand = state.hands[state.activeHandIndex] || null;
 
@@ -28,6 +40,16 @@ export function useBlackjack(config: Partial<GameConfig> = {}) {
     () => (state.dealerHand.length > 0 ? evaluateHandFull(state.dealerHand) : null),
     [state.dealerHand]
   );
+
+  useEffect(() => {
+    if (state.phase !== Phase.PEEKING) return;
+    if (state.insuranceOffered && !state.insuranceDecided) return;
+    if (state.evenMoneyOffered && !state.evenMoneyDecided) return;
+    const timer = setTimeout(() => {
+      dispatch({ type: Action.PEEK });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [state.phase, state.insuranceDecided, state.evenMoneyDecided]);
 
   useEffect(() => {
     if (state.phase === Phase.DEALER_TURN) {
@@ -112,6 +134,8 @@ export function useBlackjack(config: Partial<GameConfig> = {}) {
     dealerEval,
     dealerFullEval,
 
+    resetGame,
+    dealRound,
     placeBet,
     deal,
     hit,

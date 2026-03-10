@@ -1,6 +1,7 @@
 export const Phase = {
   BETTING: 'betting',
   DEALING: 'dealing',
+  PEEKING: 'peeking',
   PLAYER_TURN: 'player-turn',
   DEALER_TURN: 'dealer-turn',
   RESOLVING: 'resolving',
@@ -24,6 +25,7 @@ export type ResultValue = (typeof Result)[keyof typeof Result];
 export const Action = {
   PLACE_BET: 'place-bet',
   DEAL: 'deal',
+  PEEK: 'peek',
   HIT: 'hit',
   STAND: 'stand',
   DOUBLE_DOWN: 'double-down',

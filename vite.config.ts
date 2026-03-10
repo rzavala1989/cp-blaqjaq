@@ -8,6 +8,9 @@ export default defineConfig({
       babel: { plugins: ['babel-plugin-styled-components'] },
     }),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom', 'styled-components'],
+  },
   test: {
     globals: true,
     environment: 'jsdom',

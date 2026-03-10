@@ -401,3 +401,190 @@ export const ScreenFlash = styled(animated.div)`
   pointer-events: none;
   z-index: 50;
 `;
+
+// === Game HUD ===
+
+export const HUDPanel = styled.div`
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  background: rgba(4, 12, 6, 0.82);
+  border: 1px solid rgba(74, 154, 90, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  min-width: 170px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+`;
+
+export const HUDSection = styled.div<{ $active?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  ${({ $active }) => $active && `
+    border-left: 2px solid gold;
+    padding-left: 0.4rem;
+    margin-left: -0.4rem;
+  `}
+`;
+
+export const HUDRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+`;
+
+export const HUDLabel = styled.span`
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(240, 230, 200, 0.45);
+  font-family: 'Playfair Display', serif;
+  flex: 1;
+`;
+
+export const HUDCard = styled.span<{ $red?: boolean; $faceDown?: boolean }>`
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: ${({ $red, $faceDown }) => $faceDown ? 'rgba(240,230,200,0.3)' : $red ? '#d45555' : '#f0e6c8'};
+  background: ${({ $faceDown }) => $faceDown ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.06)'};
+  border: 1px solid ${({ $faceDown }) => $faceDown ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'};
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  min-width: 1.6rem;
+  text-align: center;
+`;
+
+export const HUDScore = styled.span`
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(184, 160, 96, 0.9);
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em;
+`;
+
+export const HUDResultTag = styled.span<{ $color?: string }>`
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ $color }) => $color ?? '#f0e6c8'};
+  font-family: 'Playfair Display', serif;
+`;
+
+export const HUDDivider = styled.hr`
+  border: none;
+  border-top: 1px solid rgba(74, 154, 90, 0.15);
+  margin: 0.1rem 0;
+`;
+
+export const HUDChips = styled.span`
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(212, 175, 80, 0.85);
+  font-family: 'DM Sans', sans-serif;
+  flex: 1;
+`;
+
+export const HUDBet = styled.span`
+  font-size: 0.72rem;
+  color: rgba(240, 230, 200, 0.4);
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.04em;
+`;
+
+// === 3D Scene Overlay ===
+
+export const SceneWrapper = styled.div`
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+`;
+
+export const SceneNotification = styled.div`
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 20, 10, 0.9);
+  color: #f0e6c8;
+  padding: 0.6rem 1.75rem;
+  border-radius: 6px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid #4a9a5a;
+  pointer-events: none;
+  white-space: nowrap;
+`;
+
+export const ControlsPanel = styled.div`
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+`;
+
+type CasinoVariant = 'deal' | 'action' | 'power' | 'danger' | 'gold' | 'rebuy';
+
+const variantBg: Record<CasinoVariant, string> = {
+  deal:   '#1a6b2a',
+  action: '#1a3a6b',
+  power:  '#2a1a6b',
+  danger: '#4a1a1a',
+  gold:   '#7a5a1a',
+  rebuy:  '#6b3a1a',
+};
+
+const variantBorder: Record<CasinoVariant, string> = {
+  deal:   '#4a9a5a',
+  action: '#4a6a9a',
+  power:  '#5a4a9a',
+  danger: '#9a4a4a',
+  gold:   '#b08a2a',
+  rebuy:  '#9a6a4a',
+};
+
+export const CasinoButton = styled.button<{ $variant?: CasinoVariant }>`
+  padding: 0.75rem 2rem;
+  color: #f0e6c8;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  background: ${({ $variant = 'action' }) => variantBg[$variant]};
+  border: 1px solid ${({ $variant = 'action' }) => variantBorder[$variant]};
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.25);
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+    transition-duration: 0.05s;
+  }
+
+  &:disabled {
+    background: #444;
+    border-color: #666;
+    color: rgba(240, 230, 200, 0.4);
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+`;

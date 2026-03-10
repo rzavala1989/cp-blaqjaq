@@ -39,6 +39,7 @@ export interface GameState {
 export type GameAction =
   | { type: typeof Action.PLACE_BET; payload: number }
   | { type: typeof Action.DEAL }
+  | { type: typeof Action.PEEK }
   | { type: typeof Action.HIT }
   | { type: typeof Action.STAND }
   | { type: typeof Action.DOUBLE_DOWN }
@@ -157,6 +158,8 @@ function handlePlaceBet(state: GameState, amount: number): GameState {
   };
 }
 
+const TEN_VALUE_RANKS = new Set(['10', 'J', 'Q', 'K']);
+
 function handleDeal(state: GameState): GameState {
   if (state.phase !== Phase.DEALING) {
     throw new Error(`Cannot deal during ${state.phase}`);
@@ -174,8 +177,6 @@ function handleDeal(state: GameState): GameState {
   const dealerCards = [dealerCard1, dealerCard2];
 
   const playerEval = evaluateHandFull(playerCards);
-  const dealerEval = evaluateHandFull(dealerCards);
-
   const hands: Hand[] = [{ ...state.hands[0], cards: playerCards }];
 
   let newState: GameState = {
@@ -186,26 +187,25 @@ function handleDeal(state: GameState): GameState {
     activeHandIndex: 0,
   };
 
-  if (playerEval.isBlackjack && dealerCard1.rank === 'A') {
-    newState.evenMoneyOffered = true;
-    newState.evenMoneyDecided = false;
-    newState.phase = Phase.PLAYER_TURN;
-    return newState;
-  }
-
-  if (playerEval.isBlackjack && dealerEval.isBlackjack) {
-    newState.hands = [{ ...hands[0], result: Result.PUSH }];
-    newState.dealerHand = revealDealerHand(dealerCards);
-    newState.chips = newState.chips + hands[0].bet;
-    newState.stats = { ...newState.stats, pushes: newState.stats.pushes + 1 };
-    newState.phase = Phase.SETTLED;
-    return newState;
-  }
+  const dealerUpRank = dealerCard1.rank;
+  const dealerShowsTenValue = TEN_VALUE_RANKS.has(dealerUpRank);
 
   if (playerEval.isBlackjack) {
+    if (dealerUpRank === 'A') {
+      // Even money offered; hole card revealed via PEEK after decision
+      newState.evenMoneyOffered = true;
+      newState.evenMoneyDecided = false;
+      newState.phase = Phase.PEEKING;
+      return newState;
+    }
+    if (dealerShowsTenValue) {
+      // Dealer could have BJ; PEEK resolves after delay
+      newState.phase = Phase.PEEKING;
+      return newState;
+    }
+    // Dealer shows 2-9: BJ impossible, pay immediately
     const payout = hands[0].bet + hands[0].bet * state.config.blackjackPayout;
     newState.hands = [{ ...hands[0], result: Result.PLAYER_BLACKJACK }];
-    newState.dealerHand = revealDealerHand(dealerCards);
     newState.chips = newState.chips + payout;
     newState.stats = {
       ...newState.stats,
@@ -216,23 +216,68 @@ function handleDeal(state: GameState): GameState {
     return newState;
   }
 
-  if (dealerCard1.rank === 'A') {
+  if (dealerUpRank === 'A') {
     newState.insuranceOffered = true;
     newState.insuranceDecided = false;
-    newState.phase = Phase.PLAYER_TURN;
+    newState.phase = Phase.PEEKING;
     return newState;
   }
 
-  if (dealerEval.isBlackjack) {
-    newState.hands = [{ ...hands[0], result: Result.DEALER_WIN }];
-    newState.dealerHand = revealDealerHand(dealerCards);
-    newState.stats = { ...newState.stats, losses: newState.stats.losses + 1 };
-    newState.phase = Phase.SETTLED;
+  if (dealerShowsTenValue) {
+    newState.phase = Phase.PEEKING;
     return newState;
   }
 
   newState.phase = Phase.PLAYER_TURN;
   return newState;
+}
+
+function handlePeek(state: GameState): GameState {
+  if (state.phase !== Phase.PEEKING) {
+    throw new Error(`Cannot peek during ${state.phase}`);
+  }
+
+  const dealerEval = evaluateHandFull(state.dealerHand);
+  const playerEval = evaluateHandFull(state.hands[0].cards);
+
+  if (dealerEval.isBlackjack) {
+    if (playerEval.isBlackjack) {
+      return {
+        ...state,
+        hands: [{ ...state.hands[0], result: Result.PUSH }],
+        dealerHand: revealDealerHand(state.dealerHand),
+        chips: state.chips + state.hands[0].bet,
+        stats: { ...state.stats, pushes: state.stats.pushes + 1 },
+        phase: Phase.SETTLED,
+      };
+    }
+    return {
+      ...state,
+      hands: [{ ...state.hands[0], result: Result.DEALER_WIN }],
+      dealerHand: revealDealerHand(state.dealerHand),
+      stats: { ...state.stats, losses: state.stats.losses + 1 },
+      phase: Phase.SETTLED,
+    };
+  }
+
+  if (playerEval.isBlackjack) {
+    const payout = state.hands[0].bet + state.hands[0].bet * state.config.blackjackPayout;
+    return {
+      ...state,
+      hands: [{ ...state.hands[0], result: Result.PLAYER_BLACKJACK }],
+      dealerHand: revealDealerHand(state.dealerHand),
+      chips: state.chips + payout,
+      stats: {
+        ...state.stats,
+        blackjacks: state.stats.blackjacks + 1,
+        wins: state.stats.wins + 1,
+      },
+      phase: Phase.SETTLED,
+    };
+  }
+
+  // Neither has BJ: hole card stays face-down, player plays on
+  return { ...state, phase: Phase.PLAYER_TURN };
 }
 
 function handleHit(state: GameState): GameState {
@@ -668,6 +713,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handlePlaceBet(state, action.payload);
     case Action.DEAL:
       return handleDeal(state);
+    case Action.PEEK:
+      return handlePeek(state);
     case Action.HIT:
       return handleHit(state);
     case Action.STAND:

@@ -1,127 +1,114 @@
-import { Suspense, useState, useEffect, useCallback } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, AccumulativeShadows, RandomizedLight } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import gsap from 'gsap';
 
-import { Lighting } from './Lighting';
-import { BlackjackTable } from './models/BlackjackTable';
-import { WhiskeyGlass } from './models/WhiskeyGlass';
-import { Colt1911 } from './models/Colt1911';
-import { Floor } from './Floor';
-import { CasinoBackdrop } from './CasinoBackdrop';
-import { CardDeck } from './models/CardDeck';
-import { FedoraHat } from './models/FedoraHat';
-import { ChipTray } from './models/ChipTray';
+import { useBlackjack } from '../hooks/useBlackjack';
+import { GameTable } from './GameTable';
+import { GameControls } from './GameControls';
+import { GameHUD } from './GameHUD';
+import { SceneWrapper, SceneNotification } from '../styled/styled-components';
 
-interface CameraIntroProps {
-  onComplete: () => void;
-}
-
-function CameraIntro({ onComplete }: CameraIntroProps) {
-  const { camera } = useThree();
-
-  useEffect(() => {
-    camera.position.set(0, 16, 20);
-    camera.lookAt(0, 0, 0);
-
-    const proxy = { angle: 0, y: 16, r: 20 };
-    gsap.to(proxy, {
-      angle: Math.PI,
-      y: 0.5,
-      r: 1.8,
-      duration: 3.5,
-      ease: 'power2.inOut',
-      onUpdate: () => {
-        camera.position.set(
-          Math.sin(proxy.angle) * proxy.r,
-          proxy.y,
-          Math.cos(proxy.angle) * proxy.r
-        );
-        camera.lookAt(0, 0, 0);
-      },
-      onComplete: () => onComplete(),
-    });
-  }, [camera, onComplete]);
-
-  return null;
-}
+const NOTIFICATION_DURATION_MS = 3000;
+// How long to wait after card count changes before allowing interaction.
+// Initial deal (4 cards): D1 settles at ~1120ms. 1250ms gives 130ms margin.
+// Hit/dealer-hit (1 card): settles at ~450ms. 600ms gives 150ms margin.
+const DEAL_READY_MS = 1250;
+const HIT_READY_MS = 600;
 
 export default function Scene() {
+  const game = useBlackjack();
+
   const [controlsReady, setControlsReady] = useState(false);
+  const [shuffleKey, setShuffleKey] = useState(0);
+  const [roundKey, setRoundKey] = useState(0);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [dealtReady, setDealtReady] = useState(true);
+
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const dealtReadyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const prevShoeLengthRef = useRef(game.shoe.length);
+  const prevCardCountRef = useRef(0);
+
+  const totalCardCount = useMemo(
+    () => game.hands.reduce((s, h) => s + h.cards.length, 0) + game.dealerHand.length,
+    [game.hands, game.dealerHand]
+  );
+
+  // Track card count changes to gate interaction until animations settle
+  useEffect(() => {
+    if (totalCardCount === 0) {
+      prevCardCountRef.current = 0;
+      setDealtReady(true);
+      return;
+    }
+    if (totalCardCount > prevCardCountRef.current) {
+      const wasEmpty = prevCardCountRef.current === 0;
+      prevCardCountRef.current = totalCardCount;
+      setDealtReady(false);
+      clearTimeout(dealtReadyTimerRef.current);
+      dealtReadyTimerRef.current = setTimeout(
+        () => setDealtReady(true),
+        wasEmpty ? DEAL_READY_MS : HIT_READY_MS
+      );
+    }
+  }, [totalCardCount]);
+
+  const showNotification = useCallback((msg: string) => {
+    setNotification(msg);
+    clearTimeout(notifTimerRef.current);
+    notifTimerRef.current = setTimeout(() => setNotification(null), NOTIFICATION_DURATION_MS);
+  }, []);
+
+  // Detect auto-reshuffle: shoe jumped back up in size
+  useEffect(() => {
+    if (game.shoe.length > prevShoeLengthRef.current) {
+      setShuffleKey(k => k + 1);
+      showNotification('New shoe in play');
+    }
+    prevShoeLengthRef.current = game.shoe.length;
+  }, [game.shoe.length, showNotification]);
+
+  // New deal: dealer gets 2 cards
+  useEffect(() => {
+    if (game.dealerHand.length === 2) setRoundKey(k => k + 1);
+  }, [game.dealerHand.length]);
+
   const handleIntroComplete = useCallback(() => setControlsReady(true), []);
 
   return (
-    <Canvas
-      shadows
-      dpr={[1, 2]}
-      gl={{
-        antialias: true,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.2,
-      }}
-      camera={{
-        fov: 60,
-        near: 0.1,
-        far: 100,
-        position: [0, 16, 20],
-      }}
-      style={{ width: '100vw', height: '100vh' }}
-    >
-      <color attach="background" args={['#000000']} />
-      <fogExp2 attach="fog" args={['#000000', 0.04]} />
+    <SceneWrapper>
+      <Canvas
+        shadows
+        dpr={[1, 2]}
+        gl={{
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2,
+        }}
+        camera={{
+          fov: 60,
+          near: 0.1,
+          far: 100,
+          position: [0, 16, 20],
+        }}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <GameTable
+          dealerCards={game.dealerHand}
+          playerCards={game.hands[0]?.cards ?? []}
+          shoeLength={game.shoe.length}
+          shuffleKey={shuffleKey}
+          roundKey={roundKey}
+          controlsReady={controlsReady}
+          onCameraIntroComplete={handleIntroComplete}
+        />
+      </Canvas>
 
-      <CameraIntro onComplete={handleIntroComplete} />
+      <GameHUD game={game} dealtReady={dealtReady} />
 
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.05}
-        enablePan={false}
-        minPolarAngle={Math.PI / 6}
-        maxPolarAngle={Math.PI / 2.2}
-        target={[0, 0, 0]}
-        enabled={controlsReady}
-      />
+      <GameControls game={game} dealtReady={dealtReady} />
 
-      <Lighting />
-
-      <Suspense fallback={null}>
-        <BlackjackTable />
-        <WhiskeyGlass />
-        <Colt1911 />
-        <FedoraHat />
-        <CardDeck />
-        <ChipTray />
-        <Floor />
-        <CasinoBackdrop />
-        <AccumulativeShadows
-          position={[0, 0.01, 0]}
-          frames={60}
-          opacity={0.8}
-          scale={6}
-          color="#1a0d00"
-        >
-          <RandomizedLight
-            amount={4}
-            radius={2}
-            intensity={1}
-            position={[0, 8, 0]}
-            bias={0.001}
-          />
-        </AccumulativeShadows>
-      </Suspense>
-
-      <Environment
-        preset="apartment"
-        background={false}
-        environmentIntensity={0.3}
-      />
-
-      <EffectComposer>
-        <Bloom luminanceThreshold={0.85} intensity={0.4} radius={0.5} />
-        <Vignette darkness={0.6} offset={0.4} />
-      </EffectComposer>
-    </Canvas>
+      {notification && <SceneNotification>{notification}</SceneNotification>}
+    </SceneWrapper>
   );
 }
