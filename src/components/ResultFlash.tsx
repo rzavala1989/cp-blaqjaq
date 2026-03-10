@@ -8,14 +8,15 @@ type ResultConfig = {
   label: string;
 };
 
+// Film noir results: marquee lights, blood on the floor, the long goodbye
 const RESULT_CONFIGS: Record<string, ResultConfig> = {
-  'player-blackjack': { bg: 'rgba(212,175,80,0.2)',  color: '#ffd700', label: 'BLACKJACK' },
-  'player-win':       { bg: 'rgba(60,160,80,0.18)',  color: '#6adf8a', label: 'WIN'       },
-  'dealer-bust':      { bg: 'rgba(60,160,80,0.18)',  color: '#6adf8a', label: 'WIN'       },
-  'dealer-win':       { bg: 'rgba(180,50,50,0.18)',  color: '#df6a6a', label: 'LOSE'      },
-  'player-bust':      { bg: 'rgba(180,50,50,0.18)',  color: '#df6a6a', label: 'BUST'      },
-  'push':             { bg: 'rgba(180,180,180,0.1)', color: '#cccccc', label: 'PUSH'      },
-  'surrender':        { bg: 'rgba(120,90,20,0.15)',  color: '#c8a040', label: 'SURRENDER' },
+  'player-blackjack': { bg: 'rgba(200, 20, 42, 0.1)',  color: '#e8e0d0', label: 'BLACKJACK' },
+  'player-win':       { bg: 'rgba(0, 0, 0, 0.06)',     color: '#b8d0c8', label: 'WIN'       },
+  'dealer-bust':      { bg: 'rgba(0, 0, 0, 0.06)',     color: '#b8d0c8', label: 'WIN'       },
+  'dealer-win':       { bg: 'rgba(200, 20, 42, 0.1)',  color: '#c81428', label: 'LOSE'      },
+  'player-bust':      { bg: 'rgba(200, 20, 42, 0.08)', color: '#a01020', label: 'BUST'      },
+  'push':             { bg: 'rgba(0, 0, 0, 0.04)',     color: 'rgba(200, 185, 155, 0.45)', label: 'PUSH' },
+  'surrender':        { bg: 'rgba(120, 90, 20, 0.07)', color: 'rgba(170, 132, 50, 0.75)', label: 'SURRENDER' },
 };
 
 interface ResultFlashProps {
@@ -53,13 +54,13 @@ export function ResultFlash({ result, triggerKey }: ResultFlashProps) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          fontSize: '5rem',
+          fontSize: '5.5rem',
           fontFamily: "'Playfair Display', serif",
           fontWeight: 900,
           textTransform: 'uppercase',
-          letterSpacing: '0.15em',
+          letterSpacing: '0.22em',
           pointerEvents: 'none',
-          textShadow: '0 0 40px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.9)',
+          textShadow: `0 0 30px ${config.color}, 0 0 80px ${config.color}66, 0 4px 16px rgba(0,0,0,0.95)`,
           zIndex: 60,
           whiteSpace: 'nowrap',
         }}

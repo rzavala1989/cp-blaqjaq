@@ -1,6 +1,10 @@
 import type { useBlackjack } from '../hooks/useBlackjack';
 import { Phase } from '../game/constants';
-import { ControlsPanel, CasinoButton, BarChipCount, BarScoreLeft, BarScoreRight } from '../styled/styled-components';
+import {
+  ControlsPanel, CasinoButton,
+  BarLeftSection, BarCenter, BarRightSection,
+  BarBalance, BarBetLabel, BarPlayerScore,
+} from '../styled/styled-components';
 import { BettingPanel } from './BettingPanel';
 
 type Game = ReturnType<typeof useBlackjack>;
@@ -27,71 +31,75 @@ interface GameControlsProps {
 export function GameControls({ game, dealtReady, currentBet, addToBet, clearBet, onDeal }: GameControlsProps) {
   const isBetting = game.phase === Phase.BETTING;
   const isSettled = game.phase === Phase.SETTLED;
-  const hasDealerCards = game.dealerHand.length > 0;
   const hasPlayerCards = (game.hands[0]?.cards.length ?? 0) > 0;
-
-  const dealerScoreStr = (() => {
-    if (!hasDealerCards) return '';
-    if (game.phase === Phase.PEEKING && game.dealerHand.some(c => c.faceDown)) return '?';
-    return formatScore(game.dealerEval);
-  })();
 
   const playerScoreStr = hasPlayerCards ? formatScore(game.playerEval) : '';
 
+  const activeBet = isBetting ? currentBet : (game.hands[0]?.bet ?? 0);
+
   return (
     <ControlsPanel>
-      <BarChipCount>◆ {game.chips.toLocaleString()}</BarChipCount>
+      {/* Left: balance and bet */}
+      <BarLeftSection>
+        <BarBalance>◆ {game.chips.toLocaleString()}</BarBalance>
+        {activeBet > 0 && <BarBetLabel>BET {activeBet}</BarBetLabel>}
+      </BarLeftSection>
 
-      {dealerScoreStr && <BarScoreLeft>DEALER&nbsp;&nbsp;{dealerScoreStr}</BarScoreLeft>}
-      {playerScoreStr && <BarScoreRight>YOU&nbsp;&nbsp;{playerScoreStr}</BarScoreRight>}
+      {/* Center: action buttons */}
+      <BarCenter>
+        {isBetting && (
+          <BettingPanel
+            game={game}
+            currentBet={currentBet}
+            addToBet={addToBet}
+            clearBet={clearBet}
+            onDeal={onDeal}
+            dealtReady={dealtReady}
+          />
+        )}
 
-      {isBetting && (
-        <BettingPanel
-          game={game}
-          currentBet={currentBet}
-          addToBet={addToBet}
-          clearBet={clearBet}
-          onDeal={onDeal}
-          dealtReady={dealtReady}
-        />
-      )}
+        {game.showInsurance && (
+          <>
+            <CasinoButton $variant="gold" onClick={game.insurance} disabled={!dealtReady}>Insurance</CasinoButton>
+            <CasinoButton $variant="danger" onClick={game.declineInsurance} disabled={!dealtReady}>No Insurance</CasinoButton>
+          </>
+        )}
 
-      {game.showInsurance && (
-        <>
-          <CasinoButton $variant="gold" onClick={game.insurance} disabled={!dealtReady}>Insurance</CasinoButton>
-          <CasinoButton $variant="danger" onClick={game.declineInsurance} disabled={!dealtReady}>No Insurance</CasinoButton>
-        </>
-      )}
+        {game.showEvenMoney && (
+          <>
+            <CasinoButton $variant="gold" onClick={game.evenMoney} disabled={!dealtReady}>Even Money</CasinoButton>
+            <CasinoButton $variant="danger" onClick={game.declineEvenMoney} disabled={!dealtReady}>Decline</CasinoButton>
+          </>
+        )}
 
-      {game.showEvenMoney && (
-        <>
-          <CasinoButton $variant="gold" onClick={game.evenMoney} disabled={!dealtReady}>Even Money</CasinoButton>
-          <CasinoButton $variant="danger" onClick={game.declineEvenMoney} disabled={!dealtReady}>Decline</CasinoButton>
-        </>
-      )}
+        {game.canHit && (
+          <CasinoButton $variant="action" onClick={game.hit} disabled={!dealtReady}>Hit</CasinoButton>
+        )}
+        {game.canStand && (
+          <CasinoButton $variant="action" onClick={game.stand} disabled={!dealtReady}>Stand</CasinoButton>
+        )}
+        {game.canDouble && (
+          <CasinoButton $variant="power" onClick={game.doubleDown} disabled={!dealtReady}>Double</CasinoButton>
+        )}
+        {game.canSplitHand && (
+          <CasinoButton $variant="power" onClick={game.split} disabled={!dealtReady}>Split</CasinoButton>
+        )}
+        {game.canSurrenderHand && (
+          <CasinoButton $variant="danger" onClick={game.surrender} disabled={!dealtReady}>Surrender</CasinoButton>
+        )}
 
-      {game.canHit && (
-        <CasinoButton $variant="action" onClick={game.hit} disabled={!dealtReady}>Hit</CasinoButton>
-      )}
-      {game.canStand && (
-        <CasinoButton $variant="action" onClick={game.stand} disabled={!dealtReady}>Stand</CasinoButton>
-      )}
-      {game.canDouble && (
-        <CasinoButton $variant="power" onClick={game.doubleDown} disabled={!dealtReady}>Double</CasinoButton>
-      )}
-      {game.canSplitHand && (
-        <CasinoButton $variant="power" onClick={game.split} disabled={!dealtReady}>Split</CasinoButton>
-      )}
-      {game.canSurrenderHand && (
-        <CasinoButton $variant="danger" onClick={game.surrender} disabled={!dealtReady}>Surrender</CasinoButton>
-      )}
+        {isSettled && (
+          <CasinoButton $variant="deal" onClick={game.newRound} disabled={!dealtReady}>New Round</CasinoButton>
+        )}
+        {game.bankrupt && (
+          <CasinoButton $variant="rebuy" onClick={game.rebuy}>Rebuy</CasinoButton>
+        )}
+      </BarCenter>
 
-      {isSettled && (
-        <CasinoButton $variant="deal" onClick={game.newRound} disabled={!dealtReady}>New Round</CasinoButton>
-      )}
-      {game.bankrupt && (
-        <CasinoButton $variant="rebuy" onClick={game.rebuy}>Rebuy</CasinoButton>
-      )}
+      {/* Right: player hand value */}
+      <BarRightSection>
+        {playerScoreStr && <BarPlayerScore>YOU&nbsp;&nbsp;{playerScoreStr}</BarPlayerScore>}
+      </BarRightSection>
     </ControlsPanel>
   );
 }

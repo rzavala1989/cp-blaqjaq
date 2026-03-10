@@ -1,71 +1,161 @@
-import { useState } from 'react';
 import styled from 'styled-components';
 import type { useBlackjack } from '../hooks/useBlackjack';
+import type { Card } from '../game/deck';
 
 type Game = ReturnType<typeof useBlackjack>;
+
+const SUIT_SIGNS: Record<string, string> = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' };
+const RED_SUITS = new Set(['H', 'D']);
 
 const Panel = styled.div`
   position: fixed;
   top: 1.25rem;
-  right: 1.25rem;
+  left: 1.25rem;
   z-index: 20;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.68rem;
-  cursor: default;
-  user-select: none;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(200, 185, 155, 0.08);
+  padding: 0.75rem 1rem;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  font-size: 0.78rem;
+  pointer-events: none;
+  min-width: 180px;
 `;
 
-const Summary = styled.div<{ $expanded: boolean }>`
-  background: ${({ $expanded }) => $expanded ? 'rgba(4, 8, 4, 0.88)' : 'transparent'};
-  border: ${({ $expanded }) => $expanded ? '1px solid rgba(160, 120, 40, 0.25)' : '1px solid transparent'};
-  border-radius: 6px;
-  padding: ${({ $expanded }) => $expanded ? '0.75rem 1rem' : '0.35rem 0.6rem'};
-  transition: background 0.2s ease, border-color 0.2s ease, padding 0.2s ease;
-`;
-
-const OneLiner = styled.div<{ $expanded: boolean }>`
-  color: rgba(184, 160, 96, ${({ $expanded }) => $expanded ? '0.85' : '0.55'});
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  transition: color 0.2s ease;
-`;
-
-const FullGrid = styled.div<{ $visible: boolean }>`
-  max-height: ${({ $visible }) => $visible ? '200px' : '0'};
-  overflow: hidden;
-  opacity: ${({ $visible }) => $visible ? '0.85' : '0'};
-  transition: max-height 0.2s ease, opacity 0.2s ease;
-  margin-top: ${({ $visible }) => $visible ? '0.6rem' : '0'};
-`;
-
-const GridRow = styled.div`
+const Row = styled.div`
   display: flex;
   justify-content: space-between;
   gap: 2rem;
   padding: 0.15rem 0;
-  color: rgba(240, 230, 200, 0.8);
 `;
 
-const GridLabel = styled.span`
-  color: rgba(184, 160, 96, 0.6);
-  letter-spacing: 0.08em;
+const Label = styled.span`
+  color: rgba(200, 185, 155, 0.35);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 `;
 
-const GridValue = styled.span`
-  font-weight: 600;
-  color: rgba(240, 230, 200, 0.9);
+const Value = styled.span`
+  color: rgba(228, 220, 200, 0.8);
+  font-variant-numeric: tabular-nums;
 `;
+
+const Divider = styled.hr`
+  border: none;
+  border-top: 1px solid rgba(200, 185, 155, 0.08);
+  margin: 0.5rem 0 0.4rem;
+`;
+
+const HandSection = styled.div`
+  padding: 0.1rem 0;
+`;
+
+const HandLabel = styled.div`
+  color: rgba(200, 185, 155, 0.3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  margin-bottom: 0.35rem;
+`;
+
+const HandRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const MiniCard = styled.div<{ $red?: boolean; $faceDown?: boolean }>`
+  width: 44px;
+  height: 62px;
+  border-radius: 3px;
+  background: ${({ $faceDown }) => $faceDown ? '#1a1a8c' : '#ffffff'};
+  border: 1px solid ${({ $faceDown }) => $faceDown ? 'rgba(240, 230, 200, 0.35)' : '#bbb'};
+  color: ${({ $red, $faceDown }) => $faceDown ? 'rgba(240, 230, 200, 0.5)' : $red ? '#cc2222' : '#111'};
+  font-family: serif;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+`;
+
+const MiniRank = styled.span`
+  font-size: 14px;
+  line-height: 1;
+`;
+
+const MiniSuit = styled.span`
+  font-size: 11px;
+  line-height: 1;
+  margin-top: 1px;
+`;
+
+const MiniCenterSuit = styled.span<{ $red?: boolean }>`
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  opacity: 0.15;
+  color: ${({ $red }) => $red ? '#cc2222' : '#111'};
+`;
+
+const MiniBackPattern = styled.div`
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(240, 230, 200, 0.3);
+  border-radius: 2px;
+`;
+
+const MiniBackQ = styled.span`
+  margin: auto;
+  font-size: 20px;
+  font-family: serif;
+  color: rgba(240, 230, 200, 0.4);
+  z-index: 1;
+`;
+
+const HandScore = styled.span`
+  color: rgba(228, 220, 200, 0.85);
+  font-family: 'Special Elite', 'Courier New', monospace;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  font-variant-numeric: tabular-nums;
+`;
+
+function MiniCardEl({ card }: { card: Card }) {
+  if (card.faceDown) {
+    return (
+      <MiniCard $faceDown>
+        <MiniBackPattern />
+        <MiniBackQ>?</MiniBackQ>
+      </MiniCard>
+    );
+  }
+  const red = RED_SUITS.has(card.suit);
+  const sign = SUIT_SIGNS[card.suit] ?? card.suit;
+  return (
+    <MiniCard $red={red}>
+      <MiniRank>{card.rank}</MiniRank>
+      <MiniSuit>{sign}</MiniSuit>
+      <MiniCenterSuit $red={red}>{sign}</MiniCenterSuit>
+    </MiniCard>
+  );
+}
 
 interface StatsPanelProps {
   game: Game;
   sessionPnL: number;
   streak: { type: 'W' | 'L' | null; count: number };
+  dealerScore: string;
+  playerScore: string;
 }
 
-export function StatsPanel({ game, sessionPnL, streak }: StatsPanelProps) {
-  const [expanded, setExpanded] = useState(false);
-
+export function StatsPanel({ game, sessionPnL, streak, dealerScore, playerScore }: StatsPanelProps) {
   const { wins, losses, pushes, blackjacks } = game.stats;
   const handsPlayed = wins + losses + pushes;
   const winRate = handsPlayed > 0 ? Math.round((wins / handsPlayed) * 100) : null;
@@ -74,38 +164,61 @@ export function StatsPanel({ game, sessionPnL, streak }: StatsPanelProps) {
   const winRateStr = winRate !== null ? `${winRate}%` : '--';
   const streakStr = streak.type && streak.count > 0 ? `${streak.type}${streak.count}` : '--';
 
-  const oneLiner = `W ${winRateStr} · P&L ${pnlStr} · ${streakStr}`;
+  const hasDealerCards = game.dealerHand.length > 0;
+  const hasPlayerCards = (game.hands[0]?.cards.length ?? 0) > 0;
 
   return (
-    <Panel
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-    >
-      <Summary $expanded={expanded}>
-        <OneLiner $expanded={expanded}>{oneLiner}</OneLiner>
-        <FullGrid $visible={expanded}>
-          <GridRow>
-            <GridLabel>Hands</GridLabel>
-            <GridValue>{handsPlayed}</GridValue>
-          </GridRow>
-          <GridRow>
-            <GridLabel>Win rate</GridLabel>
-            <GridValue>{winRateStr}</GridValue>
-          </GridRow>
-          <GridRow>
-            <GridLabel>Streak</GridLabel>
-            <GridValue>{streakStr}</GridValue>
-          </GridRow>
-          <GridRow>
-            <GridLabel>P&L</GridLabel>
-            <GridValue>{pnlStr}</GridValue>
-          </GridRow>
-          <GridRow>
-            <GridLabel>Blackjacks</GridLabel>
-            <GridValue>{blackjacks}</GridValue>
-          </GridRow>
-        </FullGrid>
-      </Summary>
+    <Panel>
+      <Row>
+        <Label>W Rate</Label>
+        <Value>{winRateStr}</Value>
+      </Row>
+      <Row>
+        <Label>P/L</Label>
+        <Value>{pnlStr}</Value>
+      </Row>
+      <Row>
+        <Label>Hands</Label>
+        <Value>{handsPlayed}</Value>
+      </Row>
+      <Row>
+        <Label>Streak</Label>
+        <Value>{streakStr}</Value>
+      </Row>
+      <Row>
+        <Label>BJ</Label>
+        <Value>{blackjacks}</Value>
+      </Row>
+
+      {hasDealerCards && (
+        <>
+          <Divider />
+          <HandSection>
+            <HandLabel>Dealer</HandLabel>
+            <HandRow>
+              {game.dealerHand.map((card, i) => (
+                <MiniCardEl key={i} card={card} />
+              ))}
+              {dealerScore && <HandScore>{dealerScore}</HandScore>}
+            </HandRow>
+          </HandSection>
+        </>
+      )}
+
+      {hasPlayerCards && (
+        <>
+          <Divider />
+          <HandSection>
+            <HandLabel>You</HandLabel>
+            <HandRow>
+              {game.hands[0].cards.map((card, i) => (
+                <MiniCardEl key={i} card={card} />
+              ))}
+              {playerScore && <HandScore>{playerScore}</HandScore>}
+            </HandRow>
+          </HandSection>
+        </>
+      )}
     </Panel>
   );
 }

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Card } from '../../game/deck';
 
@@ -158,13 +159,30 @@ function CardMesh({ card, position, dealDelay, rotation }: CardMeshProps) {
   );
 }
 
+const scorePillStyle: React.CSSProperties = {
+  background: 'rgba(0, 0, 0, 0.65)',
+  backdropFilter: 'blur(4px)',
+  border: '1px solid rgba(200, 185, 155, 0.12)',
+  borderRadius: '3px',
+  padding: '2px 8px',
+  color: '#e4dcc8',
+  fontFamily: "'Special Elite', 'Courier New', monospace",
+  fontSize: '11px',
+  letterSpacing: '0.08em',
+  whiteSpace: 'nowrap',
+  pointerEvents: 'none',
+  fontVariantNumeric: 'tabular-nums',
+};
+
 export interface DealtCardProps {
   roundKey: number;
   dealerCards: Card[];
   playerCards: Card[];
+  dealerScore?: string;
+  playerScore?: string;
 }
 
-export function DealtCard({ roundKey, dealerCards, playerCards }: DealtCardProps) {
+export function DealtCard({ roundKey, dealerCards, playerCards, dealerScore, playerScore }: DealtCardProps) {
   return (
     <group>
       {dealerCards.map((card, i) => (
@@ -185,6 +203,26 @@ export function DealtCard({ roundKey, dealerCards, playerCards }: DealtCardProps
           rotation={[-Math.PI / 2 + 0.2, 0, 0]}
         />
       ))}
+
+      {/* Score pills on the felt */}
+      {dealerScore && dealerCards.length > 0 && (
+        <Html
+          position={[DEALER_ORIGIN[0] - 0.1, DEALER_ORIGIN[1] + 0.02, DEALER_ORIGIN[2]]}
+          center
+          style={scorePillStyle}
+        >
+          {dealerScore}
+        </Html>
+      )}
+      {playerScore && playerCards.length > 0 && (
+        <Html
+          position={[PLAYER_ORIGIN[0] - 0.1, PLAYER_ORIGIN[1] + 0.02, PLAYER_ORIGIN[2]]}
+          center
+          style={scorePillStyle}
+        >
+          {playerScore}
+        </Html>
+      )}
     </group>
   );
 }

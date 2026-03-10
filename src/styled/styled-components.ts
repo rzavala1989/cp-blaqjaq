@@ -402,84 +402,117 @@ export const ScreenFlash = styled(animated.div)`
   z-index: 50;
 `;
 
-// === Bottom Bar ===
+// === Bottom Bar Sections ===
 
-export const BarChipCount = styled.div`
-  position: absolute;
-  left: 1.5rem;
-  font-size: 0.9rem;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  color: rgba(212, 175, 80, 0.85);
-  pointer-events: none;
-  letter-spacing: 0.02em;
+export const BarLeftSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 10rem;
 `;
 
-export const BarScoreLeft = styled.span`
-  position: absolute;
-  left: 9rem;
-  font-size: 0.75rem;
-  font-family: 'Playfair Display', serif;
-  color: rgba(184, 160, 96, 0.7);
-  pointer-events: none;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+export const BarCenter = styled.div`
+  flex: 1;
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+  align-items: center;
 `;
 
-export const BarScoreRight = styled.span`
-  position: absolute;
-  right: 9rem;
-  font-size: 0.75rem;
-  font-family: 'Playfair Display', serif;
-  color: rgba(184, 160, 96, 0.7);
-  pointer-events: none;
+export const BarRightSection = styled.div`
+  display: flex;
+  align-items: center;
+  min-width: 10rem;
+  justify-content: flex-end;
+`;
+
+export const BarBalance = styled.div`
+  font-size: 1rem;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  color: rgba(58, 104, 152, 0.85);
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+`;
+
+export const BarBetLabel = styled.div`
+  font-size: 0.8rem;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  color: rgba(200, 185, 155, 0.45);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+`;
+
+export const BarPlayerScore = styled.div`
+  font-size: 1rem;
+  font-family: 'Playfair Display', serif;
+  color: rgba(200, 185, 155, 0.55);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
 `;
 
 // === Chip Betting ===
 
 export const ChipButton = styled.button<{ $color: string }>`
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  border: 3px solid ${({ $color }) => $color};
-  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid ${({ $color }) => $color};
+  background: #06060a;
   color: ${({ $color }) => $color};
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Special Elite', 'Courier New', monospace;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: filter 0.15s ease, background 0.15s ease;
+  transition: box-shadow 0.2s ease;
   flex-shrink: 0;
+  letter-spacing: 0.04em;
 
   &:hover:not(:disabled) {
-    filter: brightness(1.3);
-    background: rgba(0, 0, 0, 0.7);
+    box-shadow:
+      0 0 8px ${({ $color }) => $color},
+      0 0 20px ${({ $color }) => $color},
+      inset 0 0 6px ${({ $color }) => $color}22;
   }
 
   &:active:not(:disabled) {
-    filter: brightness(0.85);
+    filter: brightness(0.8);
     transition-duration: 0.05s;
   }
 
   &:disabled {
-    opacity: 0.35;
+    opacity: 0.2;
     cursor: not-allowed;
   }
 `;
 
 export const BetDisplay = styled.div`
-  font-size: 1.4rem;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  color: rgba(212, 175, 80, 0.9);
-  letter-spacing: 0.04em;
+  font-size: 1.5rem;
+  font-family: 'Special Elite', 'Courier New', monospace;
+  color: #e4dcc8;
+  letter-spacing: 0.06em;
   min-width: 6rem;
   text-align: center;
+`;
+
+// === Film Grain ===
+
+const grain = keyframes`
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-2%, -3%); }
+  20%  { transform: translate(4%, 2%); }
+  30%  { transform: translate(-1%, 4%); }
+  40%  { transform: translate(3%, -2%); }
+  50%  { transform: translate(-3%, 1%); }
+  60%  { transform: translate(2%, 3%); }
+  70%  { transform: translate(-4%, -1%); }
+  80%  { transform: translate(1%, -4%); }
+  90%  { transform: translate(-2%, 2%); }
+  100% { transform: translate(0, 0); }
 `;
 
 // === 3D Scene Overlay ===
@@ -488,6 +521,21 @@ export const SceneWrapper = styled.div`
   position: relative;
   width: 100vw;
   height: 100vh;
+
+  /* Film grain overlay */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    opacity: 0.038;
+    pointer-events: none;
+    z-index: 999;
+    animation: ${grain} 0.35s steps(1) infinite;
+  }
 `;
 
 export const SceneNotification = styled.div`
@@ -495,15 +543,16 @@ export const SceneNotification = styled.div`
   top: 2rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(10, 20, 10, 0.9);
-  color: #f0e6c8;
-  padding: 0.6rem 1.75rem;
-  border-radius: 6px;
+  background: #06060a;
+  color: #e4dcc8;
+  padding: 0.55rem 1.75rem;
+  border-radius: 0;
   font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  border: 1px solid #4a9a5a;
+  border: 1px solid rgba(200, 20, 42, 0.45);
+  box-shadow: 0 0 18px rgba(200, 20, 42, 0.08), 0 4px 24px rgba(0, 0, 0, 0.8);
   pointer-events: none;
   white-space: nowrap;
 `;
@@ -513,63 +562,77 @@ export const ControlsPanel = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  height: 88px;
-  background: linear-gradient(to top, #0d0a06 0%, #161208 70%, transparent 100%);
-  border-top: 1px solid rgba(160, 120, 40, 0.35);
+  height: 96px;
+  background: #06060a;
+  border-top: 1px solid rgba(200, 20, 42, 0.55);
+  box-shadow:
+    0 -6px 48px rgba(0, 0, 0, 0.98),
+    inset 0 1px 0 rgba(200, 20, 42, 0.08);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0 2rem;
+  padding: 0 1.75rem;
 `;
 
 type CasinoVariant = 'deal' | 'action' | 'power' | 'danger' | 'gold' | 'rebuy';
 
 const variantBg: Record<CasinoVariant, string> = {
-  deal:   '#1a6b2a',
-  action: '#1a3a6b',
-  power:  '#2a1a6b',
-  danger: '#4a1a1a',
-  gold:   '#7a5a1a',
-  rebuy:  '#6b3a1a',
+  deal:   '#0e0608',
+  action: '#06080e',
+  power:  '#080608',
+  danger: '#0c0406',
+  gold:   '#0c0a04',
+  rebuy:  '#0a0604',
 };
 
 const variantBorder: Record<CasinoVariant, string> = {
-  deal:   '#4a9a5a',
-  action: '#4a6a9a',
-  power:  '#5a4a9a',
-  danger: '#9a4a4a',
-  gold:   '#b08a2a',
-  rebuy:  '#9a6a4a',
+  deal:   '#c8142a',
+  action: '#3a6898',
+  power:  '#8868a8',
+  danger: '#6a1020',
+  gold:   '#907830',
+  rebuy:  '#704820',
+};
+
+const variantGlow: Record<CasinoVariant, string> = {
+  deal:   'rgba(200, 20, 42, 0.35)',
+  action: 'rgba(58, 104, 152, 0.35)',
+  power:  'rgba(136, 104, 168, 0.35)',
+  danger: 'rgba(106, 16, 32, 0.4)',
+  gold:   'rgba(144, 120, 48, 0.35)',
+  rebuy:  'rgba(112, 72, 32, 0.35)',
 };
 
 export const CasinoButton = styled.button<{ $variant?: CasinoVariant }>`
-  padding: 0.85rem 2.2rem;
-  color: #f0e6c8;
-  border-radius: 4px;
-  font-size: 1.05rem;
+  padding: 0.85rem 2.4rem;
+  color: #e4dcc8;
+  border-radius: 2px;
+  font-size: 1.1rem;
   font-family: 'Playfair Display', serif;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: filter 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.2s ease, filter 0.15s ease;
   background: ${({ $variant = 'action' }) => variantBg[$variant]};
   border: 1px solid ${({ $variant = 'action' }) => variantBorder[$variant]};
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 
   &:hover:not(:disabled) {
-    filter: brightness(1.25);
+    box-shadow:
+      0 0 10px ${({ $variant = 'action' }) => variantGlow[$variant]},
+      0 0 28px ${({ $variant = 'action' }) => variantGlow[$variant]},
+      inset 0 0 8px ${({ $variant = 'action' }) => variantGlow[$variant]};
+    filter: brightness(1.2);
   }
 
   &:active:not(:disabled) {
-    filter: brightness(0.85);
+    filter: brightness(0.8);
     transition-duration: 0.05s;
   }
 
   &:disabled {
-    background: #444;
-    border-color: #666;
-    color: rgba(240, 230, 200, 0.4);
+    background: #0e0e0e;
+    border-color: rgba(180, 165, 135, 0.12);
+    color: rgba(200, 185, 155, 0.22);
     cursor: not-allowed;
     filter: none;
   }

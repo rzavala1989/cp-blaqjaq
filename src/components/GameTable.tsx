@@ -59,6 +59,8 @@ export interface GameTableProps {
   roundKey: number;
   controlsReady: boolean;
   onCameraIntroComplete: () => void;
+  dealerScore?: string;
+  playerScore?: string;
 }
 
 export function GameTable({
@@ -69,6 +71,8 @@ export function GameTable({
   roundKey,
   controlsReady,
   onCameraIntroComplete,
+  dealerScore,
+  playerScore,
 }: GameTableProps) {
   const dealtCount = TOTAL_CARDS - shoeLength;
 
@@ -104,6 +108,8 @@ export function GameTable({
           roundKey={roundKey}
           dealerCards={dealerCards}
           playerCards={playerCards}
+          dealerScore={dealerScore}
+          playerScore={playerScore}
         />
         <ChipTray />
         <Floor />

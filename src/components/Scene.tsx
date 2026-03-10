@@ -8,15 +8,23 @@ import { GameTable } from './GameTable';
 import { GameControls } from './GameControls';
 import { ResultFlash } from './ResultFlash';
 import { StatsPanel } from './StatsPanel';
+import { TableStatePanel } from './TableStatePanel';
 import { Phase } from '../game/constants';
 import { SceneWrapper, SceneNotification } from '../styled/styled-components';
 
 const NOTIFICATION_DURATION_MS = 3000;
-// How long to wait after card count changes before allowing interaction.
-// Initial deal (4 cards): D1 settles at ~1120ms. 1250ms gives 130ms margin.
-// Hit/dealer-hit (1 card): settles at ~450ms. 600ms gives 150ms margin.
 const DEAL_READY_MS = 1250;
 const HIT_READY_MS = 600;
+
+type HandEval = { value: number; isSoft: boolean; isBlackjack: boolean; isBust: boolean } | null;
+
+function formatScore(eval_: HandEval): string {
+  if (!eval_ || eval_.value === 0) return '';
+  if (eval_.isBlackjack) return 'BJ';
+  if (eval_.isBust) return 'BUST';
+  if (eval_.isSoft && eval_.value !== 21) return `${eval_.value - 10}/${eval_.value}`;
+  return String(eval_.value);
+}
 
 export default function Scene() {
   const game = useBlackjack();
@@ -48,7 +56,6 @@ export default function Scene() {
   const [flashKey, setFlashKey] = useState(0);
 
   // Stats tracking
-  const prevChipsRef = useRef(game.chips);
   const streakRef = useRef<{ type: 'W' | 'L' | null; count: number }>({ type: null, count: 0 });
   const [streakDisplay, setStreakDisplay] = useState<{ type: 'W' | 'L' | null; count: number }>({ type: null, count: 0 });
 
@@ -62,6 +69,21 @@ export default function Scene() {
     () => game.hands.reduce((s, h) => s + h.cards.length, 0) + game.dealerHand.length,
     [game.hands, game.dealerHand]
   );
+
+  // Compute formatted scores for 3D pills and panels
+  const hasDealerCards = game.dealerHand.length > 0;
+  const hasPlayerCards = (game.hands[0]?.cards.length ?? 0) > 0;
+
+  const dealerScoreStr = useMemo(() => {
+    if (!hasDealerCards) return '';
+    if (game.phase === Phase.PEEKING && game.dealerHand.some(c => c.faceDown)) return '?';
+    return formatScore(game.dealerEval);
+  }, [hasDealerCards, game.phase, game.dealerHand, game.dealerEval]);
+
+  const playerScoreStr = useMemo(() => {
+    if (!hasPlayerCards) return '';
+    return formatScore(game.playerEval);
+  }, [hasPlayerCards, game.playerEval]);
 
   // Watch phase for result flash and streak tracking
   useEffect(() => {
@@ -164,6 +186,8 @@ export default function Scene() {
           roundKey={roundKey}
           controlsReady={controlsReady}
           onCameraIntroComplete={handleIntroComplete}
+          dealerScore={dealerScoreStr}
+          playerScore={playerScoreStr}
         />
       </Canvas>
 
@@ -182,6 +206,14 @@ export default function Scene() {
         game={game}
         sessionPnL={sessionPnL}
         streak={streakDisplay}
+        dealerScore={dealerScoreStr}
+        playerScore={playerScoreStr}
+      />
+
+      <TableStatePanel
+        dealerScore={dealerScoreStr}
+        shoeRemaining={game.shoe.length}
+        decksInPlay={game.config.deckCount}
       />
 
       {notification && <SceneNotification>{notification}</SceneNotification>}
