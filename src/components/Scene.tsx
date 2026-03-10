@@ -3,9 +3,12 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import { useBlackjack } from '../hooks/useBlackjack';
+import { useSounds } from '../hooks/useSounds';
 import { GameTable } from './GameTable';
 import { GameControls } from './GameControls';
-import { GameHUD } from './GameHUD';
+import { ResultFlash } from './ResultFlash';
+import { StatsPanel } from './StatsPanel';
+import { Phase } from '../game/constants';
 import { SceneWrapper, SceneNotification } from '../styled/styled-components';
 
 const NOTIFICATION_DURATION_MS = 3000;
@@ -24,15 +27,71 @@ export default function Scene() {
   const [notification, setNotification] = useState<string | null>(null);
   const [dealtReady, setDealtReady] = useState(true);
 
+  // Betting state
+  const [currentBet, setCurrentBet] = useState(game.config.minimumBet);
+
+  const addToBet = useCallback((n: number) => {
+    setCurrentBet(prev => Math.min(prev + n, game.config.maximumBet, game.chips));
+  }, [game.config.maximumBet, game.chips]);
+
+  const clearBet = useCallback(() => {
+    setCurrentBet(game.config.minimumBet);
+  }, [game.config.minimumBet]);
+
+  const handleDeal = useCallback(() => {
+    game.dealRound(currentBet);
+    clearBet();
+  }, [currentBet, game, clearBet]);
+
+  // Result flash state
+  const [flashResult, setFlashResult] = useState<string | null>(null);
+  const [flashKey, setFlashKey] = useState(0);
+
+  // Stats tracking
+  const prevChipsRef = useRef(game.chips);
+  const streakRef = useRef<{ type: 'W' | 'L' | null; count: number }>({ type: null, count: 0 });
+  const [streakDisplay, setStreakDisplay] = useState<{ type: 'W' | 'L' | null; count: number }>({ type: null, count: 0 });
+
   const notifTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const dealtReadyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevShoeLengthRef = useRef(game.shoe.length);
   const prevCardCountRef = useRef(0);
+  const prevPhaseRef = useRef(game.phase);
 
   const totalCardCount = useMemo(
     () => game.hands.reduce((s, h) => s + h.cards.length, 0) + game.dealerHand.length,
     [game.hands, game.dealerHand]
   );
+
+  // Watch phase for result flash and streak tracking
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = game.phase;
+
+    if (game.phase === Phase.SETTLED && prevPhase !== Phase.SETTLED) {
+      const result = game.hands[0]?.result;
+      if (result) {
+        setFlashResult(result);
+        setFlashKey(k => k + 1);
+
+        const isWin = result === 'player-win' || result === 'dealer-bust' || result === 'player-blackjack';
+        const isLoss = result === 'dealer-win' || result === 'player-bust';
+
+        if (isWin) {
+          streakRef.current = streakRef.current.type === 'W'
+            ? { type: 'W', count: streakRef.current.count + 1 }
+            : { type: 'W', count: 1 };
+        } else if (isLoss) {
+          streakRef.current = streakRef.current.type === 'L'
+            ? { type: 'L', count: streakRef.current.count + 1 }
+            : { type: 'L', count: 1 };
+        } else {
+          streakRef.current = { type: null, count: 0 };
+        }
+        setStreakDisplay({ ...streakRef.current });
+      }
+    }
+  }, [game.phase, game.hands]);
 
   // Track card count changes to gate interaction until animations settle
   useEffect(() => {
@@ -75,6 +134,10 @@ export default function Scene() {
 
   const handleIntroComplete = useCallback(() => setControlsReady(true), []);
 
+  useSounds(game);
+
+  const sessionPnL = game.chips - game.config.startingChips;
+
   return (
     <SceneWrapper>
       <Canvas
@@ -104,9 +167,22 @@ export default function Scene() {
         />
       </Canvas>
 
-      <GameHUD game={game} dealtReady={dealtReady} />
+      <GameControls
+        game={game}
+        dealtReady={dealtReady}
+        currentBet={currentBet}
+        addToBet={addToBet}
+        clearBet={clearBet}
+        onDeal={handleDeal}
+      />
 
-      <GameControls game={game} dealtReady={dealtReady} />
+      <ResultFlash result={flashResult} triggerKey={flashKey} />
+
+      <StatsPanel
+        game={game}
+        sessionPnL={sessionPnL}
+        streak={streakDisplay}
+      />
 
       {notification && <SceneNotification>{notification}</SceneNotification>}
     </SceneWrapper>

@@ -1,24 +1,59 @@
 import type { useBlackjack } from '../hooks/useBlackjack';
 import { Phase } from '../game/constants';
-import { ControlsPanel, CasinoButton } from '../styled/styled-components';
+import { ControlsPanel, CasinoButton, BarChipCount, BarScoreLeft, BarScoreRight } from '../styled/styled-components';
+import { BettingPanel } from './BettingPanel';
 
 type Game = ReturnType<typeof useBlackjack>;
+
+type HandEval = { value: number; isSoft: boolean; isBlackjack: boolean; isBust: boolean } | null;
+
+function formatScore(eval_: HandEval): string {
+  if (!eval_ || eval_.value === 0) return '';
+  if (eval_.isBlackjack) return 'BJ';
+  if (eval_.isBust) return 'BUST';
+  if (eval_.isSoft && eval_.value !== 21) return `${eval_.value - 10}/${eval_.value}`;
+  return String(eval_.value);
+}
 
 interface GameControlsProps {
   game: Game;
   dealtReady: boolean;
+  currentBet: number;
+  addToBet: (n: number) => void;
+  clearBet: () => void;
+  onDeal: () => void;
 }
 
-export function GameControls({ game, dealtReady }: GameControlsProps) {
+export function GameControls({ game, dealtReady, currentBet, addToBet, clearBet, onDeal }: GameControlsProps) {
   const isBetting = game.phase === Phase.BETTING;
   const isSettled = game.phase === Phase.SETTLED;
+  const hasDealerCards = game.dealerHand.length > 0;
+  const hasPlayerCards = (game.hands[0]?.cards.length ?? 0) > 0;
+
+  const dealerScoreStr = (() => {
+    if (!hasDealerCards) return '';
+    if (game.phase === Phase.PEEKING && game.dealerHand.some(c => c.faceDown)) return '?';
+    return formatScore(game.dealerEval);
+  })();
+
+  const playerScoreStr = hasPlayerCards ? formatScore(game.playerEval) : '';
 
   return (
     <ControlsPanel>
+      <BarChipCount>◆ {game.chips.toLocaleString()}</BarChipCount>
+
+      {dealerScoreStr && <BarScoreLeft>DEALER&nbsp;&nbsp;{dealerScoreStr}</BarScoreLeft>}
+      {playerScoreStr && <BarScoreRight>YOU&nbsp;&nbsp;{playerScoreStr}</BarScoreRight>}
+
       {isBetting && (
-        <CasinoButton $variant="deal" onClick={() => game.dealRound(100)} disabled={!dealtReady}>
-          Deal ({game.shoe.length} left)
-        </CasinoButton>
+        <BettingPanel
+          game={game}
+          currentBet={currentBet}
+          addToBet={addToBet}
+          clearBet={clearBet}
+          onDeal={onDeal}
+          dealtReady={dealtReady}
+        />
       )}
 
       {game.showInsurance && (
@@ -52,7 +87,7 @@ export function GameControls({ game, dealtReady }: GameControlsProps) {
       )}
 
       {isSettled && (
-        <CasinoButton $variant="danger" onClick={game.newRound} disabled={!dealtReady}>New Round</CasinoButton>
+        <CasinoButton $variant="deal" onClick={game.newRound} disabled={!dealtReady}>New Round</CasinoButton>
       )}
       {game.bankrupt && (
         <CasinoButton $variant="rebuy" onClick={game.rebuy}>Rebuy</CasinoButton>

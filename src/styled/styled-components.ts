@@ -402,100 +402,84 @@ export const ScreenFlash = styled(animated.div)`
   z-index: 50;
 `;
 
-// === Game HUD ===
+// === Bottom Bar ===
 
-export const HUDPanel = styled.div`
+export const BarChipCount = styled.div`
   position: absolute;
-  top: 1.25rem;
-  left: 1.25rem;
-  background: rgba(4, 12, 6, 0.82);
-  border: 1px solid rgba(74, 154, 90, 0.3);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  min-width: 170px;
-  backdrop-filter: blur(6px);
-  pointer-events: none;
-  font-family: 'DM Sans', sans-serif;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-`;
-
-export const HUDSection = styled.div<{ $active?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  ${({ $active }) => $active && `
-    border-left: 2px solid gold;
-    padding-left: 0.4rem;
-    margin-left: -0.4rem;
-  `}
-`;
-
-export const HUDRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-`;
-
-export const HUDLabel = styled.span`
-  font-size: 0.6rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(240, 230, 200, 0.45);
+  left: 1.5rem;
+  font-size: 0.9rem;
   font-family: 'Playfair Display', serif;
-  flex: 1;
-`;
-
-export const HUDCard = styled.span<{ $red?: boolean; $faceDown?: boolean }>`
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: ${({ $red, $faceDown }) => $faceDown ? 'rgba(240,230,200,0.3)' : $red ? '#d45555' : '#f0e6c8'};
-  background: ${({ $faceDown }) => $faceDown ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.06)'};
-  border: 1px solid ${({ $faceDown }) => $faceDown ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'};
-  border-radius: 3px;
-  padding: 0.1rem 0.3rem;
-  min-width: 1.6rem;
-  text-align: center;
-`;
-
-export const HUDScore = styled.span`
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: rgba(184, 160, 96, 0.9);
-  font-family: 'DM Sans', sans-serif;
-  letter-spacing: 0.02em;
-`;
-
-export const HUDResultTag = styled.span<{ $color?: string }>`
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: ${({ $color }) => $color ?? '#f0e6c8'};
-  font-family: 'Playfair Display', serif;
-`;
-
-export const HUDDivider = styled.hr`
-  border: none;
-  border-top: 1px solid rgba(74, 154, 90, 0.15);
-  margin: 0.1rem 0;
-`;
-
-export const HUDChips = styled.span`
-  font-size: 0.8rem;
   font-weight: 700;
   color: rgba(212, 175, 80, 0.85);
-  font-family: 'DM Sans', sans-serif;
-  flex: 1;
+  pointer-events: none;
+  letter-spacing: 0.02em;
 `;
 
-export const HUDBet = styled.span`
-  font-size: 0.72rem;
-  color: rgba(240, 230, 200, 0.4);
+export const BarScoreLeft = styled.span`
+  position: absolute;
+  left: 9rem;
+  font-size: 0.75rem;
+  font-family: 'Playfair Display', serif;
+  color: rgba(184, 160, 96, 0.7);
+  pointer-events: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+`;
+
+export const BarScoreRight = styled.span`
+  position: absolute;
+  right: 9rem;
+  font-size: 0.75rem;
+  font-family: 'Playfair Display', serif;
+  color: rgba(184, 160, 96, 0.7);
+  pointer-events: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+`;
+
+// === Chip Betting ===
+
+export const ChipButton = styled.button<{ $color: string }>`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid ${({ $color }) => $color};
+  background: rgba(0, 0, 0, 0.5);
+  color: ${({ $color }) => $color};
+  font-size: 0.68rem;
+  font-weight: 700;
   font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.3);
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+    transition-duration: 0.05s;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+`;
+
+export const BetDisplay = styled.div`
+  font-size: 1.4rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: rgba(212, 175, 80, 0.9);
   letter-spacing: 0.04em;
+  min-width: 6rem;
+  text-align: center;
 `;
 
 // === 3D Scene Overlay ===
@@ -526,12 +510,17 @@ export const SceneNotification = styled.div`
 
 export const ControlsPanel = styled.div`
   position: absolute;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 88px;
+  background: linear-gradient(to top, #0d0a06 0%, #161208 70%, transparent 100%);
+  border-top: 1px solid rgba(160, 120, 40, 0.35);
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  padding: 0 2rem;
 `;
 
 type CasinoVariant = 'deal' | 'action' | 'power' | 'danger' | 'gold' | 'rebuy';
@@ -555,15 +544,16 @@ const variantBorder: Record<CasinoVariant, string> = {
 };
 
 export const CasinoButton = styled.button<{ $variant?: CasinoVariant }>`
-  padding: 0.75rem 2rem;
+  padding: 0.85rem 2.2rem;
   color: #f0e6c8;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 4px;
+  font-size: 1.05rem;
   font-family: 'Playfair Display', serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   transition: filter 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   background: ${({ $variant = 'action' }) => variantBg[$variant]};
   border: 1px solid ${({ $variant = 'action' }) => variantBorder[$variant]};
 

@@ -11,8 +11,8 @@ const DECK_POS: [number, number, number] = [0.5, 0.1, -0.38];
 // Dealer first card position (user-placed), spread right by CARD_SPREAD per card
 const DEALER_ORIGIN: [number, number, number] = [-0.05, 0.069, -0.48];
 // Player cards, in front of betting circle
-const PLAYER_ORIGIN: [number, number, number] = [-0.05, 0.069, -1.15];
-const CARD_SPREAD = 0.07;
+const PLAYER_ORIGIN: [number, number, number] = [-0.05, 0.069, -1.2];
+const CARD_SPREAD = 0.11;
 
 // Initial deal: P0=0, D0=15, P1=30, D1=45 frames — classic casino stagger
 // Hit cards (index >= 2) come from the deck immediately
@@ -119,9 +119,10 @@ interface CardMeshProps {
   card: Card;
   position: [number, number, number];
   dealDelay: number;
+  rotation: [number, number, number];
 }
 
-function CardMesh({ card, position, dealDelay }: CardMeshProps) {
+function CardMesh({ card, position, dealDelay, rotation }: CardMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   const posRef = useRef(new THREE.Vector3(...DECK_POS));
@@ -150,8 +151,8 @@ function CardMesh({ card, position, dealDelay }: CardMeshProps) {
   const texture = card.faceDown ? getBackTexture() : getFaceTexture(card.rank, card.suit);
 
   return (
-    <mesh ref={meshRef} position={DECK_POS} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[0.064, 0.089]} />
+    <mesh ref={meshRef} position={DECK_POS} rotation={rotation}>
+      <planeGeometry args={[0.096, 0.134]} />
       <meshStandardMaterial ref={matRef} map={texture} side={THREE.DoubleSide} />
     </mesh>
   );
@@ -172,6 +173,7 @@ export function DealtCard({ roundKey, dealerCards, playerCards }: DealtCardProps
           card={card}
           position={[DEALER_ORIGIN[0] + i * CARD_SPREAD, DEALER_ORIGIN[1], DEALER_ORIGIN[2]]}
           dealDelay={getDealDelay('dealer', i)}
+          rotation={[-Math.PI / 2 + 0.05, 0, 0]}
         />
       ))}
       {playerCards.map((card, i) => (
@@ -180,6 +182,7 @@ export function DealtCard({ roundKey, dealerCards, playerCards }: DealtCardProps
           card={card}
           position={[PLAYER_ORIGIN[0] + i * CARD_SPREAD, PLAYER_ORIGIN[1], PLAYER_ORIGIN[2]]}
           dealDelay={getDealDelay('player', i)}
+          rotation={[-Math.PI / 2 + 0.2, 0, 0]}
         />
       ))}
     </group>
