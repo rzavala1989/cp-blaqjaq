@@ -517,7 +517,7 @@ const grain = keyframes`
 
 // === 3D Scene Overlay ===
 
-export const SceneWrapper = styled.div`
+export const SceneWrapper = styled.div<{ $enableGrain?: boolean }>`
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -531,10 +531,10 @@ export const SceneWrapper = styled.div`
     height: 120%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
     background-size: 180px 180px;
-    opacity: 0.038;
+    opacity: ${({ $enableGrain = true }) => $enableGrain ? 0.038 : 0};
     pointer-events: none;
     z-index: 999;
-    animation: ${grain} 0.35s steps(1) infinite;
+    animation: ${({ $enableGrain = true }) => $enableGrain ? grain : 'none'} 0.35s steps(1) infinite;
   }
 `;
 
@@ -564,10 +564,11 @@ export const ControlsPanel = styled.div`
   right: 0;
   height: 96px;
   background: #06060a;
-  border-top: 1px solid rgba(200, 20, 42, 0.55);
+  border-top: 1px solid rgba(200, 20, 42, 0.6);
   box-shadow:
     0 -6px 48px rgba(0, 0, 0, 0.98),
-    inset 0 1px 0 rgba(200, 20, 42, 0.08);
+    0 -1px 12px rgba(200, 20, 42, 0.12),
+    inset 0 1px 0 rgba(200, 20, 42, 0.1);
   display: flex;
   align-items: center;
   padding: 0 1.75rem;

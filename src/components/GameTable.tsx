@@ -1,7 +1,7 @@
 import { Suspense, useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
-import { OrbitControls, AccumulativeShadows, RandomizedLight } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { OrbitControls, ContactShadows, Stats } from '@react-three/drei';
+import { EffectComposer, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -59,8 +59,9 @@ export interface GameTableProps {
   roundKey: number;
   controlsReady: boolean;
   onCameraIntroComplete: () => void;
-  dealerScore?: string;
-  playerScore?: string;
+  enablePostProcessing?: boolean;
+  enableShadows?: boolean;
+  enableStats?: boolean;
 }
 
 export function GameTable({
@@ -71,15 +72,16 @@ export function GameTable({
   roundKey,
   controlsReady,
   onCameraIntroComplete,
-  dealerScore,
-  playerScore,
+  enablePostProcessing = true,
+  enableShadows = true,
+  enableStats = false,
 }: GameTableProps) {
   const dealtCount = TOTAL_CARDS - shoeLength;
 
   return (
     <>
       <color attach="background" args={['#000000']} />
-      <fogExp2 attach="fog" args={['#000000', 0.018]} />
+      <fogExp2 attach="fog" args={['#000000', 0.022]} />
 
       <CameraIntro onComplete={onCameraIntroComplete} />
 
@@ -95,6 +97,8 @@ export function GameTable({
 
       <Lighting />
 
+      {enableStats && <Stats />}
+
       <Suspense fallback={null}>
         <BlackjackTable />
         <WhiskeyGlass />
@@ -108,32 +112,26 @@ export function GameTable({
           roundKey={roundKey}
           dealerCards={dealerCards}
           playerCards={playerCards}
-          dealerScore={dealerScore}
-          playerScore={playerScore}
         />
         <ChipTray />
         <Floor />
-        <AccumulativeShadows
-          position={[0, 0.01, 0]}
-          frames={60}
-          opacity={0.8}
-          scale={6}
-          color="#1a0d00"
-        >
-          <RandomizedLight
-            amount={4}
-            radius={2}
-            intensity={1}
-            position={[0, 8, 0]}
-            bias={0.001}
+        {enableShadows && (
+          <ContactShadows
+            position={[0, 0.01, 0]}
+            opacity={0.6}
+            scale={6}
+            blur={2.5}
+            far={4}
+            color="#1a0d00"
           />
-        </AccumulativeShadows>
+        )}
       </Suspense>
 
-      <EffectComposer>
-        <Bloom luminanceThreshold={0.85} intensity={0.4} radius={0.5} />
-        <Vignette darkness={0.6} offset={0.4} />
-      </EffectComposer>
+      {enablePostProcessing && (
+        <EffectComposer>
+          <Vignette darkness={0.7} offset={0.35} />
+        </EffectComposer>
+      )}
     </>
   );
 }

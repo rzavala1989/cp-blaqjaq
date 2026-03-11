@@ -3,7 +3,7 @@ export function Lighting() {
     <>
       <spotLight
         position={[0, 8, 0]}
-        color="#ffffff"
+        color="#fff5e0"
         intensity={30}
         angle={Math.PI / 6}
         penumbra={0.5}

@@ -7,19 +7,28 @@ type Game = ReturnType<typeof useBlackjack>;
 const SUIT_SIGNS: Record<string, string> = { S: '\u2660', H: '\u2665', D: '\u2666', C: '\u2663' };
 const RED_SUITS = new Set(['H', 'D']);
 
-const Panel = styled.div`
+const Wrapper = styled.div`
   position: fixed;
   top: 1.25rem;
   left: 1.25rem;
   z-index: 20;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(200, 185, 155, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+`;
+
+const Box = styled.div`
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(200, 185, 155, 0.18);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6), 0 0 1px rgba(200, 185, 155, 0.1);
   padding: 0.75rem 1rem;
   font-family: 'Special Elite', 'Courier New', monospace;
   font-size: 0.78rem;
-  pointer-events: none;
-  min-width: 180px;
+`;
+
+const StatsBox = styled(Box)`
+  width: 180px;
 `;
 
 const Row = styled.div`
@@ -30,14 +39,16 @@ const Row = styled.div`
 `;
 
 const Label = styled.span`
-  color: rgba(200, 185, 155, 0.35);
+  color: rgba(200, 185, 155, 0.4);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(200, 185, 155, 0.08);
 `;
 
 const Value = styled.span`
-  color: rgba(228, 220, 200, 0.8);
+  color: rgba(228, 220, 200, 0.85);
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px rgba(228, 220, 200, 0.1);
 `;
 
 const Divider = styled.hr`
@@ -167,58 +178,62 @@ export function StatsPanel({ game, sessionPnL, streak, dealerScore, playerScore 
   const hasDealerCards = game.dealerHand.length > 0;
   const hasPlayerCards = (game.hands[0]?.cards.length ?? 0) > 0;
 
+  const showHands = hasDealerCards || hasPlayerCards;
+
   return (
-    <Panel>
-      <Row>
-        <Label>W Rate</Label>
-        <Value>{winRateStr}</Value>
-      </Row>
-      <Row>
-        <Label>P/L</Label>
-        <Value>{pnlStr}</Value>
-      </Row>
-      <Row>
-        <Label>Hands</Label>
-        <Value>{handsPlayed}</Value>
-      </Row>
-      <Row>
-        <Label>Streak</Label>
-        <Value>{streakStr}</Value>
-      </Row>
-      <Row>
-        <Label>BJ</Label>
-        <Value>{blackjacks}</Value>
-      </Row>
+    <Wrapper>
+      <StatsBox >
+        <Row>
+          <Label>W Rate</Label>
+          <Value>{winRateStr}</Value>
+        </Row>
+        <Row>
+          <Label>P/L</Label>
+          <Value>{pnlStr}</Value>
+        </Row>
+        <Row>
+          <Label>Hands</Label>
+          <Value>{handsPlayed}</Value>
+        </Row>
+        <Row>
+          <Label>Streak</Label>
+          <Value>{streakStr}</Value>
+        </Row>
+        <Row>
+          <Label>BJ</Label>
+          <Value>{blackjacks}</Value>
+        </Row>
+      </StatsBox>
 
-      {hasDealerCards && (
-        <>
-          <Divider />
-          <HandSection>
-            <HandLabel>Dealer</HandLabel>
-            <HandRow>
-              {game.dealerHand.map((card, i) => (
-                <MiniCardEl key={i} card={card} />
-              ))}
-              {dealerScore && <HandScore>{dealerScore}</HandScore>}
-            </HandRow>
-          </HandSection>
-        </>
-      )}
+      {showHands && (
+        <Box >
+          {hasDealerCards && (
+            <HandSection>
+              <HandLabel>Dealer</HandLabel>
+              <HandRow>
+                {game.dealerHand.map((card, i) => (
+                  <MiniCardEl key={i} card={card} />
+                ))}
+                {dealerScore && <HandScore>{dealerScore}</HandScore>}
+              </HandRow>
+            </HandSection>
+          )}
 
-      {hasPlayerCards && (
-        <>
-          <Divider />
-          <HandSection>
-            <HandLabel>You</HandLabel>
-            <HandRow>
-              {game.hands[0].cards.map((card, i) => (
-                <MiniCardEl key={i} card={card} />
-              ))}
-              {playerScore && <HandScore>{playerScore}</HandScore>}
-            </HandRow>
-          </HandSection>
-        </>
+          {hasDealerCards && hasPlayerCards && <Divider />}
+
+          {hasPlayerCards && (
+            <HandSection>
+              <HandLabel>You</HandLabel>
+              <HandRow>
+                {game.hands[0].cards.map((card, i) => (
+                  <MiniCardEl key={i} card={card} />
+                ))}
+                {playerScore && <HandScore>{playerScore}</HandScore>}
+              </HandRow>
+            </HandSection>
+          )}
+        </Box>
       )}
-    </Panel>
+    </Wrapper>
   );
 }

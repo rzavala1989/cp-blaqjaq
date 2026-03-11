@@ -9,6 +9,8 @@ import { GameControls } from './GameControls';
 import { ResultFlash } from './ResultFlash';
 import { StatsPanel } from './StatsPanel';
 import { TableStatePanel } from './TableStatePanel';
+import { DebugPanel, DEFAULT_DEBUG } from './DebugPanel';
+import type { DebugFlags } from './DebugPanel';
 import { Phase } from '../game/constants';
 import { SceneWrapper, SceneNotification } from '../styled/styled-components';
 
@@ -34,6 +36,10 @@ export default function Scene() {
   const [roundKey, setRoundKey] = useState(0);
   const [notification, setNotification] = useState<string | null>(null);
   const [dealtReady, setDealtReady] = useState(true);
+
+  // Debug panel
+  const [debugFlags, setDebugFlags] = useState<DebugFlags>(DEFAULT_DEBUG);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   // Betting state
   const [currentBet, setCurrentBet] = useState(game.config.minimumBet);
@@ -161,9 +167,9 @@ export default function Scene() {
   const sessionPnL = game.chips - game.config.startingChips;
 
   return (
-    <SceneWrapper>
+    <SceneWrapper $enableGrain={debugFlags.filmGrain}>
       <Canvas
-        shadows
+        shadows={{ type: THREE.PCFShadowMap }}
         dpr={[1, 2]}
         gl={{
           antialias: true,
@@ -186,8 +192,9 @@ export default function Scene() {
           roundKey={roundKey}
           controlsReady={controlsReady}
           onCameraIntroComplete={handleIntroComplete}
-          dealerScore={dealerScoreStr}
-          playerScore={playerScoreStr}
+          enablePostProcessing={debugFlags.postProcessing}
+          enableShadows={debugFlags.shadows}
+          enableStats={debugFlags.stats}
         />
       </Canvas>
 
@@ -217,6 +224,13 @@ export default function Scene() {
       />
 
       {notification && <SceneNotification>{notification}</SceneNotification>}
+
+      <DebugPanel
+        flags={debugFlags}
+        onChange={setDebugFlags}
+        open={debugOpen}
+        onToggleOpen={() => setDebugOpen(o => !o)}
+      />
     </SceneWrapper>
   );
 }
