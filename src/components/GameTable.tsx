@@ -14,7 +14,7 @@ import { Floor } from './Floor';
 import { CardDeck } from './models/CardDeck';
 import { DealtCard } from './models/DealtCard';
 import { FedoraHat } from './models/FedoraHat';
-import { ChipTray } from './models/ChipTray';
+import { ChipTray, PlayerChips, BetChips } from './models/ChipTray';
 
 const TOTAL_CARDS = 312;
 
@@ -59,6 +59,8 @@ export interface GameTableProps {
   roundKey: number;
   controlsReady: boolean;
   onCameraIntroComplete: () => void;
+  chips: number;
+  activeBet: number;
   enablePostProcessing?: boolean;
   enableShadows?: boolean;
   enableStats?: boolean;
@@ -72,6 +74,8 @@ export function GameTable({
   roundKey,
   controlsReady,
   onCameraIntroComplete,
+  chips,
+  activeBet,
   enablePostProcessing = true,
   enableShadows = true,
   enableStats = false,
@@ -114,6 +118,8 @@ export function GameTable({
           playerCards={playerCards}
         />
         <ChipTray />
+        <PlayerChips chips={chips} />
+        <BetChips bet={activeBet} />
         <Floor />
         {enableShadows && (
           <ContactShadows

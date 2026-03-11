@@ -192,6 +192,8 @@ export default function Scene() {
           roundKey={roundKey}
           controlsReady={controlsReady}
           onCameraIntroComplete={handleIntroComplete}
+          chips={game.chips}
+          activeBet={game.hands[0]?.bet ?? 0}
           enablePostProcessing={debugFlags.postProcessing}
           enableShadows={debugFlags.shadows}
           enableStats={debugFlags.stats}

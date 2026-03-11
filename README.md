@@ -1,26 +1,24 @@
 # Blaqjaq
 
-A React blackjack game with animated cards, chip tracking, and full game logic.
+3D blackjack game with film noir aesthetics, procedural audio, and a pure reducer game engine.
 
 [Live App](https://blaqjaq.vercel.app/)
 
-## Features
+## Documentation
 
-- Animated card flip via `@react-spring/web`
-- Pure reducer-based game engine (no React deps)
-- Chip count and betting system
-- Dealer auto-play with realistic timing
-- Multi-deck shoe support
+- [Architecture](docs/architecture.md) - Game engine, React layer, 3D scene, state flow
+- [3D Scene and Models](docs/scene.md) - Three.js setup, models, lighting, post-processing
+- [UI Components](docs/ui.md) - Panels, controls, betting, result flash, debug tools
+- [Game Engine](docs/engine.md) - Reducer, phases, actions, scoring, deck management
+- [Performance](docs/performance.md) - Known costs, debug panel, optimization decisions
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
+```
 
 ## Tech Stack
 
-- React 19 with Vite 6
-- styled-components v6
-- @react-spring/web v10
-- Vitest for testing
-
-## Future improvements
-
-- Split and double-down actions
-- Card counting visual (deck depletion indicator)
-- Improved dealer strategy (push logic)
+React 19, Vite 6, TypeScript, Three.js (via @react-three/fiber and drei), styled-components v6, @react-spring/web v10, Vitest
