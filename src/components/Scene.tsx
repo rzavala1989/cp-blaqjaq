@@ -11,6 +11,7 @@ import { StatsPanel } from './StatsPanel';
 import { TableStatePanel } from './TableStatePanel';
 import { DebugPanel, DEFAULT_DEBUG } from './DebugPanel';
 import type { DebugFlags } from './DebugPanel';
+import { TendenciesPanel } from './TendenciesPanel';
 import { Phase } from '../game/constants';
 import { SceneWrapper, SceneNotification } from '../styled/styled-components';
 
@@ -40,6 +41,9 @@ export default function Scene() {
   // Debug panel
   const [debugFlags, setDebugFlags] = useState<DebugFlags>(DEFAULT_DEBUG);
   const [debugOpen, setDebugOpen] = useState(false);
+
+  // Tendencies panel
+  const [showTendencies, setShowTendencies] = useState(false);
 
   // Betting state
   const [currentBet, setCurrentBet] = useState(game.config.minimumBet);
@@ -226,6 +230,14 @@ export default function Scene() {
       />
 
       {notification && <SceneNotification>{notification}</SceneNotification>}
+
+      <TendenciesPanel
+        sessionStats={game.sessionStats}
+        handHistory={game.handHistory}
+        config={game.config}
+        open={showTendencies}
+        onToggle={() => setShowTendencies(o => !o)}
+      />
 
       <DebugPanel
         flags={debugFlags}

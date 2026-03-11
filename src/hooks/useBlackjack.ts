@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { gameReducer, createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine';
+import { createInitialState, canSplit, canDoubleDown, canSurrender, isBankrupt } from '../game/gameEngine';
+import { instrumentedReducer } from '../game/instrumentedReducer';
 import type { GameState, GameAction } from '../game/gameEngine';
 import { Phase, Action } from '../game/constants';
 import type { GameConfig } from '../game/constants';
@@ -9,7 +10,7 @@ export function useBlackjack(config: Partial<GameConfig> = {}) {
   const [state, setState] = useState<GameState>(() => createInitialState(config));
 
   const dispatch = useCallback((action: GameAction) => {
-    setState(prev => gameReducer(prev, action));
+    setState(prev => instrumentedReducer(prev, action));
   }, []);
 
   const resetGame = useCallback(() => {
@@ -19,8 +20,8 @@ export function useBlackjack(config: Partial<GameConfig> = {}) {
   // Atomic bet + deal in a single state update — avoids two-step setState in UI
   const dealRound = useCallback((amount: number) => {
     setState(prev => {
-      const afterBet = gameReducer(prev, { type: Action.PLACE_BET, payload: amount });
-      return gameReducer(afterBet, { type: Action.DEAL });
+      const afterBet = instrumentedReducer(prev, { type: Action.PLACE_BET, payload: amount });
+      return instrumentedReducer(afterBet, { type: Action.DEAL });
     });
   }, []);
 

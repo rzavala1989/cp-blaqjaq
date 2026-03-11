@@ -29,11 +29,11 @@ function CameraIntro({ onComplete }: CameraIntroProps) {
     camera.position.set(0, 16, 20);
     camera.lookAt(0, 0, 0);
 
-    const proxy = { angle: 0, y: 16, r: 20 };
+    const proxy = { angle: 0, y: 24, r: 20 };
     gsap.to(proxy, {
       angle: Math.PI,
-      y: 0.5,
-      r: 1.8,
+      y: 1.3,
+      r: 2.1,
       duration: 3.5,
       ease: 'power2.inOut',
       onUpdate: () => {

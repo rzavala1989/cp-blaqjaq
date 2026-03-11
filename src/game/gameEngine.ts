@@ -1,8 +1,10 @@
 import { Phase, Result, Action, DEFAULT_CONFIG } from './constants';
-import type { PhaseValue, ResultValue, GameConfig } from './constants';
+import type { PhaseValue, ResultValue, ActionValue, GameConfig } from './constants';
 import { evaluateHandFull } from './scoring';
 import { createShoe, drawCard, needsReshuffle } from './deck';
 import type { Card } from './deck';
+import { createEmptySessionStats } from './analytics';
+import type { HandRecord, SessionStats } from './analytics';
 
 export interface Hand {
   cards: Card[];
@@ -34,6 +36,10 @@ export interface GameState {
   evenMoneyDecided: boolean;
   chips: number;
   stats: Stats;
+  handHistory: HandRecord[];
+  sessionStats: SessionStats;
+  currentHandActions: ActionValue[];
+  chipsBefore: number;
 }
 
 export type GameAction =
@@ -81,6 +87,10 @@ export function createInitialState(config: Partial<GameConfig> = {}): GameState 
     evenMoneyDecided: false,
     chips: mergedConfig.startingChips,
     stats: { wins: 0, losses: 0, pushes: 0, blackjacks: 0 },
+    handHistory: [],
+    sessionStats: createEmptySessionStats(mergedConfig),
+    currentHandActions: [],
+    chipsBefore: mergedConfig.startingChips,
   };
 }
 

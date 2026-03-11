@@ -1,23 +1,6 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-
-// Player denominations (aligned with BettingPanel noir palette)
-const PLAYER_DENOMS = [
-  { value: 500, color: '#aa8428', label: '500' },
-  { value: 100, color: '#3a6898', label: '100' },
-  { value: 25,  color: '#c8142a', label: '25' },
-  { value: 10,  color: '#d2c6aa', label: '10' },
-];
-
-// Dealer's bank denominations (decorative, full casino set)
-const DEALER_DENOMS = [
-  { color: '#c8a000', label: '1000' },
-  { color: '#6050a8', label: '500' },
-  { color: '#2a2a2a', label: '100' },
-  { color: '#1e6b1e', label: '25' },
-  { color: '#cc2020', label: '5' },
-  { color: '#1e8fcc', label: '1' },
-];
+import { PLAYER_DENOMS, DEALER_DENOMS } from '../../game/constants';
 
 const CHIP_RADIUS = 0.024;
 const CHIP_HEIGHT = 0.003;

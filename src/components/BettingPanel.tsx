@@ -2,18 +2,13 @@ import styled from 'styled-components';
 import { playChipClick } from '../utils/sounds';
 import type { useBlackjack } from '../hooks/useBlackjack';
 import { ChipButton, CasinoButton } from '../styled/styled-components';
+import { PLAYER_DENOMS, DENOMINATIONS } from '../game/constants';
 
 type Game = ReturnType<typeof useBlackjack>;
 
-// Film noir chip palette: ivory dime, blood red quarter, cold steel c-note, tarnished gold big stack
-const CHIP_COLORS: Record<number, string> = {
-  10:  'rgba(210, 198, 170, 0.55)',
-  25:  'rgba(200, 20, 42, 0.75)',
-  100: 'rgba(58, 104, 152, 0.85)',
-  500: 'rgba(170, 132, 40, 0.75)',
-};
-
-const DENOMINATIONS = [10, 25, 100, 500];
+const CHIP_COLORS: Record<number, string> = Object.fromEntries(
+  PLAYER_DENOMS.map(d => [d.value, d.uiColor])
+);
 
 const BettingRow = styled.div`
   display: flex;
