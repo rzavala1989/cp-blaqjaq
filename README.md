@@ -10,6 +10,7 @@
 - [3D Scene and Models](docs/scene.md) - Three.js setup, models, lighting, post-processing
 - [UI Components](docs/ui.md) - Panels, controls, betting, result flash, debug tools
 - [Game Engine](docs/engine.md) - Reducer, phases, actions, scoring, deck management
+- [Analytics](docs/analytics.md) - Basic strategy engine, hand records, session stats, tendencies panel
 - [Performance](docs/performance.md) - Known costs, debug panel, optimization decisions
 
 ## Quick Start
@@ -21,4 +22,4 @@ npm run dev
 
 ## Tech Stack
 
-React 19, Vite 6, TypeScript, Three.js (via @react-three/fiber and drei), styled-components v6, @react-spring/web v10, Vitest
+React 19, Vite 6, TypeScript, Three.js (via @react-three/fiber and drei), styled-components v6, @react-spring/web v10, recharts, Vitest
